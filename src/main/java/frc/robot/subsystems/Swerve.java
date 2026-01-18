@@ -5,8 +5,13 @@ import static edu.wpi.first.units.Units.*;
 import com.ctre.phoenix6.SignalLogger;
 import com.ctre.phoenix6.Utils;
 import com.ctre.phoenix6.swerve.SwerveDrivetrainConstants;
+import com.ctre.phoenix6.swerve.SwerveModule.DriveRequestType;
 import com.ctre.phoenix6.swerve.SwerveModuleConstants;
 import com.ctre.phoenix6.swerve.SwerveRequest;
+import com.pathplanner.lib.auto.AutoBuilder;
+import com.pathplanner.lib.config.RobotConfig;
+import com.pathplanner.lib.controllers.PPHolonomicDriveController;
+import com.pathplanner.lib.util.PathPlannerLogging;
 import edu.wpi.first.epilogue.Logged;
 import edu.wpi.first.math.Matrix;
 import edu.wpi.first.math.Nat;
@@ -32,6 +37,7 @@ import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.Subsystem;
 import edu.wpi.first.wpilibj2.command.sysid.SysIdRoutine;
+import frc.robot.Constants.AutoConstants;
 import frc.robot.Constants.FieldConstants;
 import frc.robot.Constants.TurretConstants;
 import frc.robot.Constants.VisionConstants;
@@ -77,6 +83,9 @@ public class Swerve extends TunerSwerveDrivetrain implements Subsystem {
       return 0;
     }
   }
+
+  private final SwerveRequest.ApplyRobotSpeeds pathApplyRobotSpeeds =
+      new SwerveRequest.ApplyRobotSpeeds().withDriveRequestType(DriveRequestType.Velocity);
 
   private Field2d field = new Field2d();
 
@@ -314,6 +323,12 @@ public class Swerve extends TunerSwerveDrivetrain implements Subsystem {
 
     stateCache = getState();
 
+    SmartDashboard.putNumberArray(
+        "Swerve/Robot Pose",
+        new double[] {
+          stateCache.Pose.getX(), stateCache.Pose.getY(), stateCache.Pose.getRotation().getDegrees()
+        });
+    SmartDashboard.putNumber("Swerve/PigeonAngle", getPigeonRotation().getDegrees());
     latestArducamLeftResult = arducamLeft.getAllUnreadResults();
     latestArducamRightResult = arducamRight.getAllUnreadResults();
     latestArducamFrontResult = arducamFront.getAllUnreadResults();
@@ -626,7 +641,6 @@ public class Swerve extends TunerSwerveDrivetrain implements Subsystem {
   }
 
   private void initVisionSim() {
-    SmartDashboard.putData("Swerve/Field", field);
     visionSim = new ExtendedVisionSystemSim("main");
 
     visionSim.addAprilTags(FieldConstants.aprilTagLayout);
@@ -684,7 +698,47 @@ public class Swerve extends TunerSwerveDrivetrain implements Subsystem {
     arducamFrontSim.enableProcessedStream(true);
   }
 
-    private Rotation2d simFaceTowards(Pose2d target, Pose2d robotPose) {
+  public void configureAutoBuilder() {
+    try {
+      RobotConfig config = RobotConfig.fromGUISettings();
+      AutoBuilder.configure(
+          () -> stateCache.Pose,
+          this::resetPose,
+          () -> stateCache.Speeds,
+          (speeds, feedforwards) ->
+              setControl(
+                  pathApplyRobotSpeeds
+                      .withSpeeds(speeds)
+                      .withWheelForceFeedforwardsX(feedforwards.robotRelativeForcesXNewtons())
+                      .withWheelForceFeedforwardsY(feedforwards.robotRelativeForcesYNewtons())),
+          new PPHolonomicDriveController(AutoConstants.translationPID, AutoConstants.rotationPID),
+          config,
+          () -> DriverStation.getAlliance().orElse(Alliance.Blue) == Alliance.Red,
+          this);
+    } catch (Exception ex) {
+      DriverStation.reportError(
+          "Failed to load PathPlanner config and configure AutoBuilder", ex.getStackTrace());
+    }
+    PathPlannerLogging.setLogActivePathCallback(
+        poses -> {
+          field.getObject("Trajectory").setPoses(poses);
+
+          if (poses.isEmpty()) {
+            field.getObject("Target Pose").setPoses();
+            // setControl(
+            //     pathApplyRobotSpeeds
+            //         .withSpeeds(new ChassisSpeeds())
+            //         .withWheelForceFeedforwardsX(new double[] {})
+            //         .withWheelForceFeedforwardsY(new double[] {}));
+          }
+        });
+    PathPlannerLogging.setLogTargetPoseCallback(
+        pose -> field.getObject("Target Pose").setPose(pose));
+
+    SmartDashboard.putData("Swerve/Field", field);
+  }
+
+  private Rotation2d simFaceTowards(Pose2d target, Pose2d robotPose) {
     Pose2d turretPose =
         robotPose.transformBy(
             new Transform2d(TurretConstants.turretOnRobot.toTranslation2d(), Rotation2d.kZero));
@@ -700,5 +754,7 @@ public class Swerve extends TunerSwerveDrivetrain implements Subsystem {
     return stateCache.Pose;
   }
 
-
+  public Rotation2d getPigeonRotation() {
+    return getPigeon2().getRotation2d();
+  }
 }
