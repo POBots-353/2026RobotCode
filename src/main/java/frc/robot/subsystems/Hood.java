@@ -4,9 +4,10 @@
 
 package frc.robot.subsystems;
 
+import static edu.wpi.first.units.Units.Degrees;
 import static edu.wpi.first.units.Units.Meters;
 import static edu.wpi.first.units.Units.MetersPerSecond;
-import static edu.wpi.first.units.Units.Rotations;
+import static edu.wpi.first.units.Units.Radians;
 
 import com.ctre.phoenix6.StatusSignal;
 import com.ctre.phoenix6.controls.MotionMagicVoltage;
@@ -29,7 +30,7 @@ import java.util.function.Supplier;
 public class Hood extends SubsystemBase {
 
   private TalonFX hoodMotor;
-  StatusSignal<Angle> hoodPosition;
+  private StatusSignal<Angle> hoodPosition;
 
   private final InterpolatingDoubleTreeMap hoodAngleMap = new InterpolatingDoubleTreeMap();
 
@@ -54,12 +55,12 @@ public class Hood extends SubsystemBase {
     hoodMotor.setPosition(0);
   }
 
-  public double getHoodAngle() {
-    return hoodPosition.getValue().in(Rotations);
+  public Angle getHoodAngle() {
+    return hoodPosition.getValue();
   }
 
-  public boolean atAngle(double targetDeg, double toleranceDeg) {
-    return Math.abs(getHoodAngle() * 360 - targetDeg) < toleranceDeg;
+  public boolean atAngle(Angle target, Angle tolerance) {
+    return Math.abs(getHoodAngle().minus(target).in(Degrees)) < tolerance.in(Degrees);
   }
 
   public double getInterpolatedHoodAngle(double distanceMeters) {
@@ -71,7 +72,7 @@ public class Hood extends SubsystemBase {
     return hoodAngleMap.get(distance);
   }
 
-  public double getPhysicsHoodAngle(
+  public Angle getPhysicsHoodAngle(
       Distance distance,
       Distance targetHeight,
       Distance shooterHeight,
@@ -95,9 +96,7 @@ public class Hood extends SubsystemBase {
 
     double denominator = g * dSq;
 
-    double angleAboveHorizontalDeg = Math.atan(numerator / denominator);
-
-    return angleAboveHorizontalDeg;
+    return Radians.of(Math.atan2(numerator, denominator));
   }
 
   public Command stop() {
@@ -145,15 +144,14 @@ public class Hood extends SubsystemBase {
                       .getTranslation()
                       .getDistance(targetPoseSupplier.get().getTranslation()));
 
-          double angleDeg =
+          Angle angle =
               getPhysicsHoodAngle(
                   distance,
                   FieldConstants.hubHeight,
                   TurretConstants.turretOnRobot.getMeasureZ(),
                   exitVelocitySupplier.get());
 
-          double targetRotations = angleDeg / 360.0;
-          hoodMotor.setControl(motionMagicRequest.withPosition(targetRotations));
+          hoodMotor.setControl(motionMagicRequest.withPosition(angle));
         })
         .withName("Aim Hood (Physics)");
   }
@@ -161,6 +159,6 @@ public class Hood extends SubsystemBase {
   @Override
   public void periodic() {
     hoodPosition.refresh();
-    SmartDashboard.putNumber("Hood/Hood Angle", getHoodAngle());
+    SmartDashboard.putNumber("Hood/Hood Angle", getHoodAngle().in(Degrees));
   }
 }
