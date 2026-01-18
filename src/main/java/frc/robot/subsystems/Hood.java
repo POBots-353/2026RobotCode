@@ -4,6 +4,8 @@
 
 package frc.robot.subsystems;
 
+import static edu.wpi.first.units.Units.Meters;
+import static edu.wpi.first.units.Units.MetersPerSecond;
 import static edu.wpi.first.units.Units.Rotations;
 
 import com.ctre.phoenix6.StatusSignal;
@@ -14,14 +16,14 @@ import edu.wpi.first.math.geometry.Rotation2d;
 import edu.wpi.first.math.geometry.Transform2d;
 import edu.wpi.first.math.interpolation.InterpolatingDoubleTreeMap;
 import edu.wpi.first.units.measure.Angle;
+import edu.wpi.first.units.measure.Distance;
+import edu.wpi.first.units.measure.LinearVelocity;
 import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
 import frc.robot.Constants.FieldConstants;
 import frc.robot.Constants.HoodConstants;
 import frc.robot.Constants.TurretConstants;
-
-import java.util.function.DoubleSupplier;
 import java.util.function.Supplier;
 
 public class Hood extends SubsystemBase {
@@ -70,28 +72,33 @@ public class Hood extends SubsystemBase {
   }
 
   public double getPhysicsHoodAngle(
-        double distanceMeters,
-        double targetHeightMeters,
-        double shooterHeightMeters,
-        double exitVelocityMetersPerSec
-) {
+      Distance distance,
+      Distance targetHeight,
+      Distance shooterHeight,
+      LinearVelocity exitVelocity) {
+    double distanceMeters = distance.in(Meters);
+    double targetHeightMeters = targetHeight.in(Meters);
+    double shooterHeightMeters = shooterHeight.in(Meters);
+    double exitVelocityMetersPerSec = exitVelocity.in(MetersPerSecond);
 
-  double vSq = exitVelocityMetersPerSec * exitVelocityMetersPerSec;
+    double vSq = exitVelocityMetersPerSec * exitVelocityMetersPerSec;
 
-  double dSq = distanceMeters * distanceMeters;
+    double dSq = distanceMeters * distanceMeters;
 
-  double dH = targetHeightMeters - shooterHeightMeters;
+    double dH = targetHeightMeters - shooterHeightMeters;
 
-  double g = 9.80665;
-// long ass physics equation i derived :D -> dont ask idk if it works
-  double numerator = (vSq * distanceMeters) + Math.sqrt((vSq * vSq * dSq) - (g * dSq*((2 * vSq * dH) + (g * dSq))));
+    double g = 9.80665;
+    // long physics equation i derived :D -> dont ask idk if it works
+    double numerator =
+        (vSq * distanceMeters)
+            + Math.sqrt((vSq * vSq * dSq) - (g * dSq * ((2 * vSq * dH) + (g * dSq))));
 
-  double denominator = g * dSq;
+    double denominator = g * dSq;
 
-  double angleAboveHorizontalDeg = Math.atan(numerator/denominator); 
+    double angleAboveHorizontalDeg = Math.atan(numerator / denominator);
 
-  return angleAboveHorizontalDeg;
-}
+    return angleAboveHorizontalDeg;
+  }
 
   public Command stop() {
     return runOnce(() -> hoodMotor.stopMotor()).withName("Stop Hood");
@@ -122,32 +129,34 @@ public class Hood extends SubsystemBase {
   }
 
   public Command aimWithPhysics(
-        Supplier<Pose2d> targetPoseSupplier, Supplier<Pose2d> robotPoseSupplier,
-        DoubleSupplier exitVelocitySupplier
-) {
+      Supplier<Pose2d> targetPoseSupplier,
+      Supplier<Pose2d> robotPoseSupplier,
+      Supplier<LinearVelocity> exitVelocitySupplier) {
     return run(() -> {
-
-      Pose2d turretPose =
+          Pose2d turretPose =
               robotPoseSupplier
                   .get()
                   .transformBy(
                       new Transform2d(
                           TurretConstants.turretOnRobot.toTranslation2d(), Rotation2d.kZero));
-          double distance =
-              turretPose.getTranslation().getDistance(targetPoseSupplier.get().getTranslation());
+          Distance distance =
+              Meters.of(
+                  turretPose
+                      .getTranslation()
+                      .getDistance(targetPoseSupplier.get().getTranslation()));
 
-        double angleDeg = getPhysicsHoodAngle(
-                distance,
-                FieldConstants.hubHeightMeters,
-                TurretConstants.turretOnRobot.getZ(),
-                exitVelocitySupplier.getAsDouble()
-        );
+          double angleDeg =
+              getPhysicsHoodAngle(
+                  distance,
+                  FieldConstants.hubHeight,
+                  TurretConstants.turretOnRobot.getMeasureZ(),
+                  exitVelocitySupplier.get());
 
-        double targetRotations = angleDeg / 360.0;
-        hoodMotor.setControl(motionMagicRequest.withPosition(targetRotations));
-
-    }).withName("Aim Hood (Physics)");
-}
+          double targetRotations = angleDeg / 360.0;
+          hoodMotor.setControl(motionMagicRequest.withPosition(targetRotations));
+        })
+        .withName("Aim Hood (Physics)");
+  }
 
   @Override
   public void periodic() {

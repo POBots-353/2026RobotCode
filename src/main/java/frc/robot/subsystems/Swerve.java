@@ -22,6 +22,7 @@ import edu.wpi.first.math.geometry.Pose3d;
 import edu.wpi.first.math.geometry.Rotation2d;
 import edu.wpi.first.math.geometry.Transform2d;
 import edu.wpi.first.math.geometry.Transform3d;
+import edu.wpi.first.math.kinematics.SwerveModuleState;
 import edu.wpi.first.math.numbers.N1;
 import edu.wpi.first.math.numbers.N3;
 import edu.wpi.first.math.numbers.N8;
@@ -31,7 +32,6 @@ import edu.wpi.first.wpilibj.DriverStation;
 import edu.wpi.first.wpilibj.DriverStation.Alliance;
 import edu.wpi.first.wpilibj.Notifier;
 import edu.wpi.first.wpilibj.RobotController;
-import edu.wpi.first.wpilibj.Timer;
 import edu.wpi.first.wpilibj.smartdashboard.Field2d;
 import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 import edu.wpi.first.wpilibj2.command.Command;
@@ -94,22 +94,13 @@ public class Swerve extends TunerSwerveDrivetrain implements Subsystem {
   private PhotonCamera arducamRight = new PhotonCamera(VisionConstants.arducamRightName);
 
   private PhotonPoseEstimator leftPoseEstimator =
-      new PhotonPoseEstimator(
-          FieldConstants.aprilTagLayout,
-          PoseStrategy.MULTI_TAG_PNP_ON_COPROCESSOR,
-          VisionConstants.arducamLeftTransform);
+      new PhotonPoseEstimator(FieldConstants.aprilTagLayout, VisionConstants.arducamLeftTransform);
 
   private PhotonPoseEstimator rightPoseEstimator =
-      new PhotonPoseEstimator(
-          FieldConstants.aprilTagLayout,
-          PoseStrategy.MULTI_TAG_PNP_ON_COPROCESSOR,
-          VisionConstants.arducamRightTransform);
+      new PhotonPoseEstimator(FieldConstants.aprilTagLayout, VisionConstants.arducamRightTransform);
 
   private PhotonPoseEstimator frontPoseEstimator =
-      new PhotonPoseEstimator(
-          FieldConstants.aprilTagLayout,
-          PoseStrategy.MULTI_TAG_PNP_ON_COPROCESSOR,
-          VisionConstants.arducamFrontTransform);
+      new PhotonPoseEstimator(FieldConstants.aprilTagLayout, VisionConstants.arducamFrontTransform);
 
   private List<PhotonPipelineResult> latestArducamLeftResult;
   private List<PhotonPipelineResult> latestArducamRightResult;
@@ -314,26 +305,15 @@ public class Swerve extends TunerSwerveDrivetrain implements Subsystem {
     return m_sysIdRoutineToApply.dynamic(direction);
   }
 
-  double ctreToFpgaTime(double timestamp) {
-    return (Timer.getFPGATimestamp() - Utils.getCurrentTimeSeconds()) + timestamp;
-  }
-
   @Override
   public void periodic() {
-
     stateCache = getState();
 
-    SmartDashboard.putNumberArray(
-        "Swerve/Robot Pose",
-        new double[] {
-          stateCache.Pose.getX(), stateCache.Pose.getY(), stateCache.Pose.getRotation().getDegrees()
-        });
-    SmartDashboard.putNumber("Swerve/PigeonAngle", getPigeonRotation().getDegrees());
     latestArducamLeftResult = arducamLeft.getAllUnreadResults();
     latestArducamRightResult = arducamRight.getAllUnreadResults();
     latestArducamFrontResult = arducamFront.getAllUnreadResults();
 
-    double stateTimestamp = ctreToFpgaTime(stateCache.Timestamp);
+    double stateTimestamp = Utils.currentTimeToFPGATime(stateCache.Timestamp);
 
     leftPoseEstimator.addHeadingData(stateTimestamp, stateCache.Pose.getRotation());
     rightPoseEstimator.addHeadingData(stateTimestamp, stateCache.Pose.getRotation());
@@ -570,7 +550,7 @@ public class Swerve extends TunerSwerveDrivetrain implements Subsystem {
     for (PoseEstimate poseEstimate : poseEstimates) {
       addVisionMeasurement(
           poseEstimate.estimatedPose().toPose2d(),
-          Utils.currentTimeToFPGATime(poseEstimate.timestamp()),
+          poseEstimate.timestamp(),
           poseEstimate.visionStandardDeviation());
     }
   }
@@ -754,7 +734,18 @@ public class Swerve extends TunerSwerveDrivetrain implements Subsystem {
     return stateCache.Pose;
   }
 
-  public Rotation2d getPigeonRotation() {
+  @Logged(name = "Rotation")
+  public Rotation2d getRotation() {
     return getPigeon2().getRotation2d();
+  }
+
+  @Logged(name = "Module States")
+  public SwerveModuleState[] getModuleStates() {
+    return stateCache.ModuleStates;
+  }
+
+  @Logged(name = "Desired States")
+  public SwerveModuleState[] getDesiredStates() {
+    return stateCache.ModuleTargets;
   }
 }

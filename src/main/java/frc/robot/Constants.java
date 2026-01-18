@@ -4,7 +4,9 @@
 
 package frc.robot;
 
+import static edu.wpi.first.units.Units.Degrees;
 import static edu.wpi.first.units.Units.FeetPerSecond;
+import static edu.wpi.first.units.Units.Inches;
 import static edu.wpi.first.units.Units.RotationsPerSecond;
 import static edu.wpi.first.units.Units.RotationsPerSecondPerSecond;
 import static edu.wpi.first.units.Units.Seconds;
@@ -27,8 +29,10 @@ import edu.wpi.first.math.geometry.Rotation3d;
 import edu.wpi.first.math.geometry.Transform3d;
 import edu.wpi.first.math.geometry.Translation3d;
 import edu.wpi.first.math.util.Units;
+import edu.wpi.first.units.measure.Angle;
 import edu.wpi.first.units.measure.AngularAcceleration;
 import edu.wpi.first.units.measure.AngularVelocity;
+import edu.wpi.first.units.measure.Distance;
 import edu.wpi.first.units.measure.LinearAcceleration;
 import edu.wpi.first.units.measure.LinearVelocity;
 import edu.wpi.first.units.measure.Time;
@@ -112,7 +116,8 @@ public final class Constants {
     public static final Pose2d hubBlueAlliance = new Pose2d(4.625594, 4.03479, Rotation2d.kZero);
     public static final Pose2d hubRedAlliance = new Pose2d(11.915394, 4.03479, Rotation2d.kZero);
 
-    public static final double hubHeightMeters = Units.inchesToMeters(72 - 8); // top of the plastic ring on the hub is 72 inches
+    // top of the plastic ring on the hub is 72 inches
+    public static final Distance hubHeight = Inches.of(72 - 8);
   }
 
   public static class TurretConstants {
@@ -120,13 +125,13 @@ public final class Constants {
     public static final double MOTOR_GEAR_TEETH = 30.0;
     public static final double INTERNAL_MOTOR_RATIO = 9.0; // Kraken internal
 
-    public static final double toleranceDeg = 20;
+    public static final Angle tolerance = Degrees.of(20);
 
     public static final double TOTAL_GEAR_RATIO =
         (TURRET_GEAR_TEETH / MOTOR_GEAR_TEETH) * INTERNAL_MOTOR_RATIO;
 
-    public static final double MIN_DEGREES = -540.0;
-    public static final double MAX_DEGREES = 540.0;
+    public static final Angle MIN_ANGLE = Degrees.of(-540.0);
+    public static final Angle MAX_ANGLE = Degrees.of(540.0);
 
     public static final MotionMagicConfigs motionMagicConfigs =
         new MotionMagicConfigs()
@@ -155,9 +160,9 @@ public final class Constants {
 
     public static final SoftwareLimitSwitchConfigs softwareLimitSwitchConfigs =
         new SoftwareLimitSwitchConfigs()
-            .withForwardSoftLimitThreshold(MAX_DEGREES)
+            .withForwardSoftLimitThreshold(MAX_ANGLE)
             .withForwardSoftLimitEnable(true)
-            .withReverseSoftLimitThreshold(MIN_DEGREES)
+            .withReverseSoftLimitThreshold(MIN_ANGLE)
             .withReverseSoftLimitEnable(true);
 
     public static final CurrentLimitsConfigs currentLimitConfigs =

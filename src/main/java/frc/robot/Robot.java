@@ -6,6 +6,8 @@ package frc.robot;
 
 import com.ctre.phoenix6.SignalLogger;
 import com.pathplanner.lib.commands.PathfindingCommand;
+import edu.wpi.first.epilogue.Epilogue;
+import edu.wpi.first.epilogue.Logged;
 import edu.wpi.first.wpilibj.DataLogManager;
 import edu.wpi.first.wpilibj.DriverStation;
 import edu.wpi.first.wpilibj.RobotController;
@@ -26,6 +28,7 @@ import frc.robot.util.LogUtil;
 public class Robot extends TimedRobot {
   private Command m_autonomousCommand;
 
+  @Logged(name = "Robot")
   private final RobotContainer m_robotContainer;
 
   /**
@@ -35,6 +38,13 @@ public class Robot extends TimedRobot {
   public Robot() {
     DataLogManager.start();
     DriverStation.startDataLog(DataLogManager.getLog());
+
+    Epilogue.configure(
+        (config) -> {
+          config.root = "";
+          config.backend = config.backend.lazy();
+        });
+    Epilogue.bind(this);
 
     SignalLogger.start();
 
@@ -67,7 +77,8 @@ public class Robot extends TimedRobot {
     // autonomous chooser on the dashboard.
     m_robotContainer = new RobotContainer();
 
-    PathfindingCommand.warmupCommand().withName("Pathfinding Warmup").schedule();
+    CommandScheduler.getInstance()
+        .schedule(PathfindingCommand.warmupCommand().withName("Pathfinding Warmup"));
   }
 
   /**

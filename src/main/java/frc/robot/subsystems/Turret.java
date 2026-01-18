@@ -151,13 +151,17 @@ public class Turret extends SubsystemBase {
 
     double candidate = current + delta;
 
-    if (candidate > TurretConstants.MAX_DEGREES) {
+    if (candidate > TurretConstants.MAX_ANGLE.in(Degrees)) {
       candidate -= 360;
-    } else if (candidate < TurretConstants.MIN_DEGREES) {
+    } else if (candidate < TurretConstants.MIN_ANGLE.in(Degrees)) {
       candidate += 360;
     }
 
-    candidate = MathUtil.clamp(candidate, TurretConstants.MIN_DEGREES, TurretConstants.MAX_DEGREES);
+    candidate =
+        MathUtil.clamp(
+            candidate,
+            TurretConstants.MIN_ANGLE.in(Degrees),
+            TurretConstants.MAX_ANGLE.in(Degrees));
 
     return Degrees.of(candidate);
   }

@@ -19,32 +19,29 @@ public class AllianceUtil {
     if (time <= 95 && time > 70) return 2;
     if (time <= 70 && time > 45) return 3;
     if (time <= 45 && time > 30) return 4;
-    return -1; 
-}
+    return -1;
+  }
 
-private static boolean isOurShift(int shift, char inactiveFirst, boolean isRed) {
+  private static boolean isOurShift(int shift, char inactiveFirst, boolean isRed) {
     boolean oddShift = (shift % 2 == 1);
 
     if (inactiveFirst == 'R') {
-        return oddShift ? !isRed : isRed;
+      return oddShift ? !isRed : isRed;
     } else {
-        return oddShift ? isRed : !isRed;
+      return oddShift ? isRed : !isRed;
     }
-}
+  }
 
-public static double timeUntilShift() {
+  public static double timeUntilShift() {
     double time = DriverStation.getMatchTime();
 
-    if (DriverStation.isAutonomous()
-            || time > 130
-            || (time <= 130 && time > 120)
-            || time <= 30) {
-        return 0;
+    if (DriverStation.isAutonomous() || time > 130 || (time <= 130 && time > 120) || time <= 30) {
+      return 0;
     }
 
     String gameData = DriverStation.getGameSpecificMessage();
     if (gameData.isEmpty()) {
-        return 0;
+      return 0;
     }
 
     char inactiveFirst = gameData.charAt(0);
@@ -52,27 +49,26 @@ public static double timeUntilShift() {
 
     int currentShift = getShift(time);
     if (currentShift == -1) {
-        return 0;
+      return 0;
     }
 
     if (isOurShift(currentShift, inactiveFirst, isRed)) {
-        return 0;
+      return 0;
     }
 
     switch (currentShift) {
-        case 1:
-            return time - 95;
-        case 2:
-            return time - 70;
-        case 3:
-            return time - 45;
-        case 4:
-            return 0;        
-        default:
-            return 0;
+      case 1:
+        return time - 95;
+      case 2:
+        return time - 70;
+      case 3:
+        return time - 45;
+      case 4:
+        return 0;
+      default:
+        return 0;
     }
-}
-
+  }
 
   public static Rotation2d getZeroRotation() {
     if (isRedAlliance()) {
@@ -85,5 +81,4 @@ public static double timeUntilShift() {
   public static Pose2d getHubPose() {
     return isRedAlliance() ? FieldConstants.hubRedAlliance : FieldConstants.hubBlueAlliance;
   }
-
 }
