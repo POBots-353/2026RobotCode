@@ -19,6 +19,7 @@ import com.ctre.phoenix6.configs.TalonFXConfiguration;
 import com.ctre.phoenix6.signals.InvertedValue;
 import com.ctre.phoenix6.signals.NeutralModeValue;
 import com.ctre.phoenix6.signals.StaticFeedforwardSignValue;
+import com.pathplanner.lib.config.PIDConstants;
 import edu.wpi.first.apriltag.AprilTagFieldLayout;
 import edu.wpi.first.math.geometry.Pose2d;
 import edu.wpi.first.math.geometry.Rotation2d;
@@ -110,6 +111,8 @@ public final class Constants {
 
     public static final Pose2d hubBlueAlliance = new Pose2d(4.625594, 4.03479, Rotation2d.kZero);
     public static final Pose2d hubRedAlliance = new Pose2d(11.915394, 4.03479, Rotation2d.kZero);
+
+    public static final double hubHeightMeters = Units.inchesToMeters(72 - 8); // top of the plastic ring on the hub is 72 inches
   }
 
   public static class TurretConstants {
@@ -169,11 +172,77 @@ public final class Constants {
             .withMotorOutput(motorOutputConfigs)
             .withSoftwareLimitSwitch(softwareLimitSwitchConfigs);
 
-    public static final Translation3d turretOnRobot = new Translation3d(-0.26, .26, 0);
+    public static final Translation3d turretOnRobot =
+        new Translation3d(-0.26, .26, Units.inchesToMeters(10.826));
 
     public static final int turretMotorID = 5;
     public static final int encoderAID = 6;
     public static final int encoderBID = 7;
+  }
 
+  public static class AutoConstants {
+    public static final PIDConstants translationPID = new PIDConstants(2, 0.0, 0.1); // 5 2.2
+    public static final PIDConstants rotationPID = new PIDConstants(1.4, 0.0, 0.1); // 1  2.8
+  }
+
+  public static class HoodConstants {
+    public static final int hoodMotorID = 8;
+
+    private static final double hoodGearRatio = 100.0;
+
+    // Hood limits (degrees)
+    private static final double minAngle = 15.0;
+    private static final double maxAngle = 60.0;
+
+    private static final double hoodVelocity = 80;
+    private static final double hoodAcceleration = 160;
+
+    private static final double kP = 0.0;
+    private static final double kI = 0.0;
+    private static final double kD = 0.5;
+
+    public static final MotionMagicConfigs motionMagicConfigs =
+        new MotionMagicConfigs()
+            .withMotionMagicCruiseVelocity(RotationsPerSecond.of(40))
+            .withMotionMagicAcceleration(RotationsPerSecondPerSecond.of(80));
+
+    public static final Slot0Configs slot0Configs =
+        new Slot0Configs()
+            .withKS(0.0)
+            .withKV(0.0)
+            .withKA(0.00)
+            .withKG(0.00)
+            .withKP(0.0)
+            .withKI(0.00)
+            .withKD(0.00)
+            .withStaticFeedforwardSign(StaticFeedforwardSignValue.UseVelocitySign);
+
+    public static final FeedbackConfigs feedbackConfigs =
+        new FeedbackConfigs().withSensorToMechanismRatio(hoodGearRatio);
+
+    public static final MotorOutputConfigs motorOutputConfigs =
+        new MotorOutputConfigs()
+            .withInverted(
+                InvertedValue.CounterClockwise_Positive) // needs to spin left when wires up
+            .withNeutralMode(NeutralModeValue.Coast);
+
+    public static final SoftwareLimitSwitchConfigs softwareLimitSwitchConfigs =
+        new SoftwareLimitSwitchConfigs()
+            .withForwardSoftLimitThreshold(maxAngle)
+            .withForwardSoftLimitEnable(true)
+            .withReverseSoftLimitThreshold(minAngle)
+            .withReverseSoftLimitEnable(true);
+
+    public static final CurrentLimitsConfigs currentLimitConfigs =
+        new CurrentLimitsConfigs().withSupplyCurrentLimit(45).withSupplyCurrentLimitEnable(true);
+
+    public static final TalonFXConfiguration hoodConfigs =
+        new TalonFXConfiguration()
+            .withCurrentLimits(currentLimitConfigs)
+            .withSlot0(slot0Configs)
+            .withMotionMagic(motionMagicConfigs)
+            .withFeedback(feedbackConfigs)
+            .withMotorOutput(motorOutputConfigs)
+            .withSoftwareLimitSwitch(softwareLimitSwitchConfigs);
   }
 }

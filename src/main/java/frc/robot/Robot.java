@@ -5,6 +5,7 @@
 package frc.robot;
 
 import com.ctre.phoenix6.SignalLogger;
+import com.pathplanner.lib.commands.PathfindingCommand;
 import edu.wpi.first.wpilibj.DataLogManager;
 import edu.wpi.first.wpilibj.DriverStation;
 import edu.wpi.first.wpilibj.RobotController;
@@ -65,6 +66,8 @@ public class Robot extends TimedRobot {
     // Instantiate our RobotContainer.  This will perform all our button bindings, and put our
     // autonomous chooser on the dashboard.
     m_robotContainer = new RobotContainer();
+
+    PathfindingCommand.warmupCommand().withName("Pathfinding Warmup").schedule();
   }
 
   /**
@@ -128,14 +131,11 @@ public class Robot extends TimedRobot {
     if (m_autonomousCommand != null) {
       m_autonomousCommand.cancel();
     }
-
   }
 
   /** This function is called periodically during operator control. */
   @Override
-  public void teleopPeriodic() {
-
-  }
+  public void teleopPeriodic() {}
 
   @Override
   public void testInit() {
