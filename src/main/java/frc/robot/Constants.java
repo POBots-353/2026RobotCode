@@ -8,11 +8,20 @@ import static edu.wpi.first.units.Units.FeetPerSecond;
 import static edu.wpi.first.units.Units.RotationsPerSecond;
 import static edu.wpi.first.units.Units.Seconds;
 
+import edu.wpi.first.apriltag.AprilTagFieldLayout;
+import edu.wpi.first.math.geometry.Pose2d;
+import edu.wpi.first.math.geometry.Rotation2d;
+import edu.wpi.first.math.geometry.Rotation3d;
+import edu.wpi.first.math.geometry.Transform3d;
+import edu.wpi.first.math.util.Units;
 import edu.wpi.first.units.measure.AngularAcceleration;
 import edu.wpi.first.units.measure.AngularVelocity;
 import edu.wpi.first.units.measure.LinearAcceleration;
 import edu.wpi.first.units.measure.LinearVelocity;
 import edu.wpi.first.units.measure.Time;
+import edu.wpi.first.wpilibj.Filesystem;
+import java.io.IOException;
+import java.nio.file.Path;
 
 /**
  * The Constants class provides a convenient place for teams to hold robot-wide numerical or boolean
@@ -39,5 +48,56 @@ public final class Constants {
         maxTranslationalSpeed.div(translationZeroToFull);
     public static final AngularAcceleration maxAngularAcceleration =
         maxRotationalSpeed.div(rotationZeroToFull);
+  }
+
+  public static class VisionConstants {
+    public static final String arducamLeftName = "Arducam_Left";
+
+    public static final Transform3d arducamLeftTransform =
+        new Transform3d(
+            Units.inchesToMeters(-10.02),
+            Units.inchesToMeters(10.02),
+            Units.inchesToMeters(5),
+            new Rotation3d(
+                0, Units.degreesToRadians(-25), Units.degreesToRadians(180 - 45))); // Pitch: 65
+
+    public static final String arducamRightName = "Arducam_Right";
+
+    public static final Transform3d arducamRightTransform =
+        new Transform3d(
+            Units.inchesToMeters(-10.02),
+            Units.inchesToMeters(-10.02),
+            Units.inchesToMeters(5),
+            new Rotation3d(
+                0, Units.degreesToRadians(-25), Units.degreesToRadians(180 + 45))); // Pitch: 65
+
+    public static final String arducamFrontName = "Arducam_Front";
+
+    public static final Transform3d arducamFrontTransform =
+        new Transform3d(
+            Units.inchesToMeters(0),
+            Units.inchesToMeters(-1),
+            Units.inchesToMeters(10.07),
+            new Rotation3d(0, Units.degreesToRadians(-15), Units.degreesToRadians(0))); // Pitch: 65
+  }
+
+  public static class FieldConstants {
+    public static final String aprilTagJson = "2026-rebuilt-welded";
+    public static final Path aprilTagJsonPath =
+        Path.of(Filesystem.getDeployDirectory().getPath(), "apriltags", aprilTagJson + ".json");
+
+    public static AprilTagFieldLayout aprilTagLayout;
+
+    static {
+      try {
+        aprilTagLayout = new AprilTagFieldLayout(aprilTagJsonPath);
+      } catch (IOException e) {
+        throw new RuntimeException(e);
+      }
+    }
+
+    public static final Pose2d hubBlueAlliance = new Pose2d(4.625594, 4.03479, Rotation2d.kZero);
+    public static final Pose2d hubRedAlliance = new Pose2d(11.915394, 4.03479, Rotation2d.kZero);
+
   }
 }

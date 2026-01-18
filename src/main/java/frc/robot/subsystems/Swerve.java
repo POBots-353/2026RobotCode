@@ -7,21 +7,46 @@ import com.ctre.phoenix6.Utils;
 import com.ctre.phoenix6.swerve.SwerveDrivetrainConstants;
 import com.ctre.phoenix6.swerve.SwerveModuleConstants;
 import com.ctre.phoenix6.swerve.SwerveRequest;
+import edu.wpi.first.epilogue.Logged;
 import edu.wpi.first.math.Matrix;
+import edu.wpi.first.math.Nat;
+import edu.wpi.first.math.VecBuilder;
+import edu.wpi.first.math.Vector;
 import edu.wpi.first.math.geometry.Pose2d;
+import edu.wpi.first.math.geometry.Pose3d;
 import edu.wpi.first.math.geometry.Rotation2d;
+import edu.wpi.first.math.geometry.Transform3d;
 import edu.wpi.first.math.numbers.N1;
 import edu.wpi.first.math.numbers.N3;
+import edu.wpi.first.math.numbers.N8;
+import edu.wpi.first.math.util.Units;
 import edu.wpi.first.wpilibj.DriverStation;
 import edu.wpi.first.wpilibj.DriverStation.Alliance;
 import edu.wpi.first.wpilibj.Notifier;
 import edu.wpi.first.wpilibj.RobotController;
+import edu.wpi.first.wpilibj.Timer;
+import edu.wpi.first.wpilibj.smartdashboard.Field2d;
+import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.Subsystem;
 import edu.wpi.first.wpilibj2.command.sysid.SysIdRoutine;
+import frc.robot.Constants.FieldConstants;
+import frc.robot.Constants.VisionConstants;
 import frc.robot.generated.TunerConstants.TunerSwerveDrivetrain;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.List;
 import java.util.Optional;
 import java.util.function.Supplier;
+import org.photonvision.EstimatedRobotPose;
+import org.photonvision.PhotonCamera;
+import org.photonvision.PhotonPoseEstimator;
+import org.photonvision.PhotonPoseEstimator.PoseStrategy;
+import org.photonvision.simulation.PhotonCameraSim;
+import org.photonvision.simulation.SimCameraProperties;
+import org.photonvision.simulation.VisionSystemSim;
+import org.photonvision.targeting.PhotonPipelineResult;
+import org.photonvision.targeting.PhotonTrackedTarget;
 
 /**
  * Class that extends the Phoenix 6 SwerveDrivetrain class and implements Subsystem so it can easily
@@ -34,6 +59,75 @@ public class Swerve extends TunerSwerveDrivetrain implements Subsystem {
   private static final double kSimLoopPeriod = 0.004; // 4 ms
   private Notifier m_simNotifier = null;
   private double m_lastSimTime;
+
+  public static record PoseEstimate(
+      Pose3d estimatedPose, double timestamp, Vector<N3> visionStandardDeviation)
+      implements Comparable<PoseEstimate> {
+    @Override
+    public int compareTo(PoseEstimate other) {
+      if (timestamp > other.timestamp) {
+        return 1;
+      } else if (timestamp < other.timestamp) {
+        return -1;
+      }
+      return 0;
+    }
+  }
+
+  private Field2d field = new Field2d();
+
+  private PhotonCamera arducamLeft = new PhotonCamera(VisionConstants.arducamLeftName);
+  private PhotonCamera arducamFront = new PhotonCamera(VisionConstants.arducamFrontName);
+  private PhotonCamera arducamRight = new PhotonCamera(VisionConstants.arducamRightName);
+
+  private PhotonPoseEstimator leftPoseEstimator =
+      new PhotonPoseEstimator(
+          FieldConstants.aprilTagLayout,
+          PoseStrategy.MULTI_TAG_PNP_ON_COPROCESSOR,
+          VisionConstants.arducamLeftTransform);
+
+  private PhotonPoseEstimator rightPoseEstimator =
+      new PhotonPoseEstimator(
+          FieldConstants.aprilTagLayout,
+          PoseStrategy.MULTI_TAG_PNP_ON_COPROCESSOR,
+          VisionConstants.arducamRightTransform);
+
+  private PhotonPoseEstimator frontPoseEstimator =
+      new PhotonPoseEstimator(
+          FieldConstants.aprilTagLayout,
+          PoseStrategy.MULTI_TAG_PNP_ON_COPROCESSOR,
+          VisionConstants.arducamFrontTransform);
+
+  private List<PhotonPipelineResult> latestArducamLeftResult;
+  private List<PhotonPipelineResult> latestArducamRightResult;
+  private List<PhotonPipelineResult> latestArducamFrontResult;
+
+  private Optional<Matrix<N3, N3>> arducamLeftMatrix = Optional.empty();
+  private Optional<Matrix<N8, N1>> arducamLeftDistCoeffs = Optional.empty();
+
+  private Optional<Matrix<N3, N3>> arducamRightMatrix = Optional.empty();
+  private Optional<Matrix<N8, N1>> arducamRightDistCoeffs = Optional.empty();
+
+  private Optional<Matrix<N3, N3>> arducamFrontMatrix = Optional.empty();
+  private Optional<Matrix<N8, N1>> arducamFrontDistCoeffs = Optional.empty();
+
+  private SwerveDriveState stateCache = getState();
+
+  private VisionSystemSim visionSim;
+
+  private PhotonCameraSim arducamLeftSim;
+  private PhotonCameraSim arducamRightSim;
+  private PhotonCameraSim arducamFrontSim;
+
+  @Logged(name = "Detected Targets")
+  private List<Pose3d> detectedTargets = new ArrayList<>();
+
+  private List<Integer> detectedAprilTags = new ArrayList<>();
+
+  @Logged(name = "Rejected Poses")
+  private List<Pose3d> rejectedPoses = new ArrayList<>();
+
+  private List<PoseEstimate> poseEstimates = new ArrayList<>();
 
   /* Blue alliance sees forward as 0 degrees (toward red alliance wall) */
   private static final Rotation2d kBlueAlliancePerspectiveRotation = Rotation2d.kZero;
@@ -116,6 +210,7 @@ public class Swerve extends TunerSwerveDrivetrain implements Subsystem {
     super(drivetrainConstants, modules);
     if (Utils.isSimulation()) {
       startSimThread();
+      initVisionSim();
     }
   }
 
@@ -137,6 +232,7 @@ public class Swerve extends TunerSwerveDrivetrain implements Subsystem {
     super(drivetrainConstants, odometryUpdateFrequency, modules);
     if (Utils.isSimulation()) {
       startSimThread();
+      initVisionSim();
     }
   }
 
@@ -169,6 +265,7 @@ public class Swerve extends TunerSwerveDrivetrain implements Subsystem {
         modules);
     if (Utils.isSimulation()) {
       startSimThread();
+      initVisionSim();
     }
   }
 
@@ -204,15 +301,49 @@ public class Swerve extends TunerSwerveDrivetrain implements Subsystem {
     return m_sysIdRoutineToApply.dynamic(direction);
   }
 
+  double ctreToFpgaTime(double timestamp) {
+    return (Timer.getFPGATimestamp() - Utils.getCurrentTimeSeconds()) + timestamp;
+  }
+
   @Override
   public void periodic() {
-    /*
-     * Periodically try to apply the operator perspective.
-     * If we haven't applied the operator perspective before, then we should apply it regardless of DS state.
-     * This allows us to correct the perspective in case the robot code restarts mid-match.
-     * Otherwise, only check and apply the operator perspective if the DS is disabled.
-     * This ensures driving behavior doesn't change until an explicit disable event occurs during testing.
-     */
+
+    stateCache = getState();
+
+    latestArducamLeftResult = arducamLeft.getAllUnreadResults();
+    latestArducamRightResult = arducamRight.getAllUnreadResults();
+    latestArducamFrontResult = arducamFront.getAllUnreadResults();
+
+    double stateTimestamp = ctreToFpgaTime(stateCache.Timestamp);
+
+    leftPoseEstimator.addHeadingData(stateTimestamp, stateCache.Pose.getRotation());
+    rightPoseEstimator.addHeadingData(stateTimestamp, stateCache.Pose.getRotation());
+    frontPoseEstimator.addHeadingData(stateTimestamp, stateCache.Pose.getRotation());
+
+    if (arducamLeftMatrix.isEmpty()) {
+      arducamLeftMatrix = arducamLeft.getCameraMatrix();
+    }
+    if (arducamLeftDistCoeffs.isEmpty()) {
+      arducamLeftDistCoeffs = arducamLeft.getDistCoeffs();
+    }
+
+    if (arducamRightMatrix.isEmpty()) {
+      arducamRightMatrix = arducamRight.getCameraMatrix();
+    }
+    if (arducamRightDistCoeffs.isEmpty()) {
+      arducamRightDistCoeffs = arducamRight.getDistCoeffs();
+    }
+
+    if (arducamFrontMatrix.isEmpty()) {
+      arducamFrontMatrix = arducamFront.getCameraMatrix();
+    }
+    if (arducamFrontDistCoeffs.isEmpty()) {
+      arducamFrontDistCoeffs = arducamFront.getDistCoeffs();
+    }
+    updateVisionPoseEstimates();
+
+    field.setRobotPose(stateCache.Pose);
+
     if (!m_hasAppliedOperatorPerspective || DriverStation.isDisabled()) {
       DriverStation.getAlliance()
           .ifPresent(
@@ -224,6 +355,16 @@ public class Swerve extends TunerSwerveDrivetrain implements Subsystem {
                 m_hasAppliedOperatorPerspective = true;
               });
     }
+  }
+
+  @Override
+  public void simulationPeriodic() {
+    // Update camera simulation
+    Pose2d robotPose = stateCache.Pose;
+
+    field.getObject("EstimatedRobot").setPose(robotPose);
+
+    visionSim.update(robotPose);
   }
 
   private void startSimThread() {
@@ -286,5 +427,249 @@ public class Swerve extends TunerSwerveDrivetrain implements Subsystem {
   @Override
   public Optional<Pose2d> samplePoseAt(double timestampSeconds) {
     return super.samplePoseAt(Utils.fpgaToCurrentTime(timestampSeconds));
+  }
+
+  private void updateVisionPoses(
+      List<PhotonPipelineResult> latestResults,
+      PhotonPoseEstimator poseEstimator,
+      Optional<Matrix<N3, N3>> cameraMatrix,
+      Optional<Matrix<N8, N1>> distCoeffs,
+      Transform3d cameraTransform,
+      double baseSingleTagStdDev,
+      double baseMultiTagStdDev,
+      double cameraWeight) {
+
+    if (latestResults.isEmpty()) {
+      return;
+    }
+
+    for (PhotonPipelineResult result : latestResults) {
+      Optional<EstimatedRobotPose> optionalVisionPose =
+          poseEstimator.estimateCoprocMultiTagPose(result);
+      if (optionalVisionPose.isEmpty()) {
+        continue;
+      }
+
+      EstimatedRobotPose visionPose = optionalVisionPose.get();
+
+      double totalDistance = 0.0;
+      int tagCount = 0;
+
+      for (PhotonTrackedTarget target : visionPose.targetsUsed) {
+        tagCount++;
+        totalDistance +=
+            target.getBestCameraToTarget().getTranslation().toTranslation2d().getNorm();
+
+        int apriltagID = target.getFiducialId();
+        Optional<Pose3d> tagPose = FieldConstants.aprilTagLayout.getTagPose(apriltagID);
+
+        if (tagPose.isEmpty()) {
+          continue;
+        }
+
+        detectedAprilTags.add(apriltagID);
+        detectedTargets.add(tagPose.get());
+      }
+
+      double averageDistance = totalDistance / tagCount;
+
+      if (tagCount > 1 && visionPose.strategy == PoseStrategy.MULTI_TAG_PNP_ON_COPROCESSOR) {
+        if (!isValidMultitagPose(
+            visionPose.estimatedPose,
+            averageDistance,
+            visionPose.targetsUsed.size(),
+            visionPose.timestampSeconds)) {
+          rejectedPoses.add(visionPose.estimatedPose);
+          continue;
+        }
+        poseEstimates.add(
+            new PoseEstimate(
+                visionPose.estimatedPose,
+                visionPose.timestampSeconds,
+                getVisionStdDevs(
+                    tagCount, averageDistance, baseMultiTagStdDev * (1 / cameraWeight))));
+      } else {
+        if (!isValidSingleTagPose(visionPose.estimatedPose, averageDistance)) {
+          rejectedPoses.add(visionPose.estimatedPose);
+          continue;
+        }
+
+        poseEstimates.add(
+            new PoseEstimate(
+                visionPose.estimatedPose,
+                visionPose.timestampSeconds,
+                getVisionStdDevs(
+                    tagCount, averageDistance, baseSingleTagStdDev * (1 / cameraWeight))));
+      }
+    }
+  }
+
+  private void updateVisionPoseEstimates() {
+    poseEstimates.clear();
+    detectedTargets.clear();
+    rejectedPoses.clear();
+
+    updateVisionPoses(
+        latestArducamLeftResult,
+        leftPoseEstimator,
+        arducamLeftMatrix,
+        arducamLeftDistCoeffs,
+        VisionConstants.arducamLeftTransform,
+        Units.inchesToMeters(3.0),
+        Units.inchesToMeters(2.5),
+        1);
+
+    updateVisionPoses(
+        latestArducamRightResult,
+        rightPoseEstimator,
+        arducamRightMatrix,
+        arducamRightDistCoeffs,
+        VisionConstants.arducamRightTransform,
+        Units.inchesToMeters(3.0),
+        Units.inchesToMeters(2.5),
+        1);
+
+    updateVisionPoses(
+        latestArducamFrontResult,
+        frontPoseEstimator,
+        arducamFrontMatrix,
+        arducamFrontDistCoeffs,
+        VisionConstants.arducamFrontTransform,
+        Units.inchesToMeters(3.0),
+        Units.inchesToMeters(2.5),
+        1);
+
+    Collections.sort(poseEstimates);
+
+    for (PoseEstimate poseEstimate : poseEstimates) {
+      addVisionMeasurement(
+          poseEstimate.estimatedPose().toPose2d(),
+          Utils.currentTimeToFPGATime(poseEstimate.timestamp()),
+          poseEstimate.visionStandardDeviation());
+    }
+  }
+
+  private Vector<N3> getVisionStdDevs(
+      int tagCount, double averageDistance, double baseStandardDev) {
+    double stdDevScale = 1 + (averageDistance * averageDistance) / 30;
+
+    return VecBuilder.fill(
+        baseStandardDev * stdDevScale, baseStandardDev * stdDevScale, Double.POSITIVE_INFINITY);
+  }
+
+  private boolean isOutOfBounds(Pose3d visionPose) {
+    final double fieldTolerance = Units.inchesToMeters(2.5);
+
+    return visionPose.getX() < -fieldTolerance
+        || visionPose.getX() > FieldConstants.aprilTagLayout.getFieldLength() + fieldTolerance
+        || visionPose.getY() < -fieldTolerance
+        || visionPose.getY() > FieldConstants.aprilTagLayout.getFieldWidth() + fieldTolerance
+        || visionPose.getZ() < -0.5
+        || visionPose.getZ() > 1.6;
+  }
+
+  private boolean isValidSingleTagPose(Pose3d visionPose, double distance) {
+    if (distance > 4.5) {
+      return false;
+    }
+    // if (DriverStation.isAutonomous()) {
+    //   return false;
+    // }
+
+    if (isOutOfBounds(visionPose)) {
+      return false;
+    }
+
+    return true;
+  }
+
+  private boolean isValidMultitagPose(
+      Pose3d visionPose, double averageDistance, int detectedTargets, double timestampSeconds) {
+    if (averageDistance > 4.5) {
+      return false;
+    }
+    // if (DriverStation.isAutonomous()) {
+    //   return false;
+    // }
+    if (isOutOfBounds(visionPose)) {
+      return false;
+    }
+
+    Optional<Rotation2d> rotationAtTime =
+        samplePoseAt(Utils.fpgaToCurrentTime(timestampSeconds)).map((pose) -> pose.getRotation());
+
+    if (rotationAtTime.isEmpty()) {
+      return false;
+    }
+
+    Rotation2d angleDifference =
+        rotationAtTime.get().minus(visionPose.getRotation().toRotation2d());
+
+    double angleTolerance = DriverStation.isAutonomous() ? 8.0 : 15.0;
+
+    if (Math.abs(angleDifference.getDegrees()) > angleTolerance) {
+      return false;
+    }
+
+    return true;
+  }
+
+  private void initVisionSim() {
+    SmartDashboard.putData("Swerve/Field", field);
+    visionSim = new VisionSystemSim("main");
+
+    visionSim.addAprilTags(FieldConstants.aprilTagLayout);
+
+    Matrix<N3, N3> calibError =
+        new Matrix<>(
+            Nat.N3(),
+            Nat.N3(),
+            new double[] {
+              689.4460449566128,
+              0,
+              441.7426355934763,
+              0,
+              688.5536260717645,
+              292.82342214293885,
+              0,
+              0,
+              1
+            });
+    Vector<N8> distCoefficients =
+        VecBuilder.fill(
+            0.03728225626399143,
+            -0.022115127374557862,
+            0.0001637647682633715,
+            0.0003334141823199474,
+            -0.03915318108680384,
+            -0.0015121698705335032,
+            0.0009546599698249316,
+            0.0016260200999396255);
+
+    SimCameraProperties arducamProperties =
+        new SimCameraProperties()
+            .setCalibration(800, 600, calibError, distCoefficients)
+            .setCalibError(0.21, 0.10)
+            .setFPS(28)
+            .setAvgLatencyMs(36)
+            .setLatencyStdDevMs(15)
+            .setExposureTimeMs(45);
+
+    arducamLeftSim = new PhotonCameraSim(arducamLeft, arducamProperties);
+    arducamRightSim = new PhotonCameraSim(arducamRight, arducamProperties);
+    arducamFrontSim = new PhotonCameraSim(arducamFront, arducamProperties);
+
+    visionSim.addCamera(arducamLeftSim, VisionConstants.arducamLeftTransform);
+    visionSim.addCamera(arducamRightSim, VisionConstants.arducamRightTransform);
+    visionSim.addCamera(arducamFrontSim, VisionConstants.arducamFrontTransform);
+
+    arducamLeftSim.enableRawStream(true);
+    arducamLeftSim.enableProcessedStream(true);
+
+    arducamRightSim.enableRawStream(true);
+    arducamRightSim.enableProcessedStream(true);
+
+    arducamFrontSim.enableRawStream(true);
+    arducamFrontSim.enableProcessedStream(true);
   }
 }
