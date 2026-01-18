@@ -458,6 +458,10 @@ public class Swerve extends TunerSwerveDrivetrain implements Subsystem {
       Optional<EstimatedRobotPose> optionalVisionPose =
           poseEstimator.estimateCoprocMultiTagPose(result);
       if (optionalVisionPose.isEmpty()) {
+        optionalVisionPose = poseEstimator.estimatePnpDistanceTrigSolvePose(result);
+        continue;
+      }
+      if (optionalVisionPose.isEmpty()) {
         continue;
       }
 
