@@ -4,7 +4,6 @@
 
 package frc.robot;
 
-import edu.wpi.first.math.geometry.Pose2d;
 import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.Commands;
 import edu.wpi.first.wpilibj2.command.button.CommandXboxController;
@@ -13,6 +12,7 @@ import frc.robot.Constants.OperatorConstants;
 import frc.robot.Constants.SwerveConstants;
 import frc.robot.commands.TeleopSwerve;
 import frc.robot.generated.TunerConstants;
+import frc.robot.subsystems.Hood;
 import frc.robot.subsystems.Swerve;
 import frc.robot.subsystems.Turret;
 import frc.robot.util.AllianceUtil;
@@ -32,12 +32,19 @@ public class RobotContainer {
 
   private final Turret turret = new Turret();
 
+  private final Hood hood = new Hood();
+
   /** The container for the robot. Contains subsystems, OI devices, and commands. */
   public RobotContainer() {
     // Configure the trigger bindings
-    configureBindings();
+    configureDriverBindings();
+    swerve.configureAutoBuilder();
 
-    turret.setDefaultCommand(turret.faceTarget(()-> AllianceUtil.getHubPose(), ()-> swerve.getRobotPose()));
+    turret.setDefaultCommand(
+        turret.faceTarget(() -> AllianceUtil.getHubPose(), () -> swerve.getRobotPose()));
+
+    hood.setDefaultCommand(
+        hood.aimForTarget(() -> AllianceUtil.getHubPose(), () -> swerve.getRobotPose()));
   }
 
   /**
@@ -49,7 +56,7 @@ public class RobotContainer {
    * PS4} controllers or {@link edu.wpi.first.wpilibj2.command.button.CommandJoystick Flight
    * joysticks}.
    */
-  private void configureBindings() {
+  private void configureDriverBindings() {
     swerve.setDefaultCommand(
         new TeleopSwerve(
             driverController::getLeftY,

@@ -7,8 +7,6 @@ package frc.robot.subsystems;
 import static edu.wpi.first.units.Units.Degrees;
 import static edu.wpi.first.units.Units.Rotations;
 
-import java.util.function.Supplier;
-
 import com.ctre.phoenix6.StatusSignal;
 import com.ctre.phoenix6.configs.CANcoderConfiguration;
 import com.ctre.phoenix6.configs.MagnetSensorConfigs;
@@ -16,7 +14,6 @@ import com.ctre.phoenix6.controls.MotionMagicVoltage;
 import com.ctre.phoenix6.hardware.CANcoder;
 import com.ctre.phoenix6.hardware.TalonFX;
 import com.ctre.phoenix6.signals.SensorDirectionValue;
-
 import edu.wpi.first.math.MathUtil;
 import edu.wpi.first.math.geometry.Pose2d;
 import edu.wpi.first.math.geometry.Rotation2d;
@@ -28,6 +25,7 @@ import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
 import frc.robot.Constants.TurretConstants;
 import frc.robot.util.AllianceUtil;
+import java.util.function.Supplier;
 
 public class Turret extends SubsystemBase {
   /** Creates a new twoEncoderTurret. */
@@ -59,17 +57,21 @@ public class Turret extends SubsystemBase {
 
     turretMotor.getConfigurator().apply(TurretConstants.turretConfigs);
 
-    encoderA.getConfigurator().apply(
-        new CANcoderConfiguration()
-            .withMagnetSensor(
-                new MagnetSensorConfigs()
-                    .withSensorDirection(SensorDirectionValue.CounterClockwise_Positive)));
+    encoderA
+        .getConfigurator()
+        .apply(
+            new CANcoderConfiguration()
+                .withMagnetSensor(
+                    new MagnetSensorConfigs()
+                        .withSensorDirection(SensorDirectionValue.CounterClockwise_Positive)));
 
-    encoderB.getConfigurator().apply(
-        new CANcoderConfiguration()
-            .withMagnetSensor(
-                new MagnetSensorConfigs()
-                    .withSensorDirection(SensorDirectionValue.CounterClockwise_Positive)));
+    encoderB
+        .getConfigurator()
+        .apply(
+            new CANcoderConfiguration()
+                .withMagnetSensor(
+                    new MagnetSensorConfigs()
+                        .withSensorDirection(SensorDirectionValue.CounterClockwise_Positive)));
 
     turretMotor.setPosition(getAbsoluteTurretPosition().in(Rotations));
     turretPosition = turretMotor.getPosition();
@@ -80,7 +82,8 @@ public class Turret extends SubsystemBase {
   //       robotPose.transformBy(
   //           new Transform2d(TurretConstants.turretOnRobot.toTranslation2d(), Rotation2d.kZero));
 
-  //   Rotation2d turretAngle = target.getTranslation().minus(turretPose.getTranslation()).getAngle();
+  //   Rotation2d turretAngle =
+  // target.getTranslation().minus(turretPose.getTranslation()).getAngle();
   //   Rotation2d angleToFace = turretAngle.minus(robotPose.getRotation());
   //   Angle finalAngle = Degrees.of(angleToFace.getDegrees());
   //   finalAngle = optimizeAngle(finalAngle);
@@ -91,22 +94,24 @@ public class Turret extends SubsystemBase {
 
   public Command faceTarget(Supplier<Pose2d> targetSupplier, Supplier<Pose2d> robotPoseSupplier) {
 
-    return run(()-> {
-      Pose2d target = targetSupplier.get();
-      Pose2d robotPose = robotPoseSupplier.get();
+    return run(() -> {
+          Pose2d target = targetSupplier.get();
+          Pose2d robotPose = robotPoseSupplier.get();
 
-    Pose2d turretPose =
-        robotPose.transformBy(
-            new Transform2d(TurretConstants.turretOnRobot.toTranslation2d(), Rotation2d.kZero));
+          Pose2d turretPose =
+              robotPose.transformBy(
+                  new Transform2d(
+                      TurretConstants.turretOnRobot.toTranslation2d(), Rotation2d.kZero));
 
-    Rotation2d turretAngle = target.getTranslation().minus(turretPose.getTranslation()).getAngle();
-    Rotation2d angleToFace = turretAngle.minus(robotPose.getRotation());
-    Angle finalAngle = Degrees.of(angleToFace.getDegrees());
-    finalAngle = optimizeAngle(finalAngle);
+          Rotation2d turretAngle =
+              target.getTranslation().minus(turretPose.getTranslation()).getAngle();
+          Rotation2d angleToFace = turretAngle.minus(robotPose.getRotation());
+          Angle finalAngle = Degrees.of(angleToFace.getDegrees());
+          finalAngle = optimizeAngle(finalAngle);
 
-    turretMotor.setControl(motionMagicRequest.withPosition(finalAngle.in(Rotations)));
-
-    }).withName("Turret Face Target");
+          turretMotor.setControl(motionMagicRequest.withPosition(finalAngle.in(Rotations)));
+        })
+        .withName("Turret Face Target");
   }
 
   private Angle getAbsoluteTurretPosition() {
@@ -127,8 +132,8 @@ public class Turret extends SubsystemBase {
     double turretRotations = motorRotations / kTurretReduction;
 
     return Degrees.of(turretRotations * 360);
-
   }
+
   public void setTargetAngleDeg(Angle desiredTurretAngle) {
 
     turretMotor.setControl(motionMagicRequest.withPosition(optimizeAngle(desiredTurretAngle)));
@@ -158,17 +163,17 @@ public class Turret extends SubsystemBase {
   }
 
   public Command setZero() {
-    return runOnce(() -> turretMotor.setPosition(0));
+    return runOnce(() -> turretMotor.setPosition(0)).withName("Set Turret Zero");
   }
 
   public Command stop() {
-    return runOnce(() -> turretMotor.stopMotor());
+    return runOnce(() -> turretMotor.stopMotor()).withName("Stop Turret");
   }
 
   public boolean hasDriftedTooMuch(double toleranceDeg) {
     double motorAngleRad = Units.degreesToRadians(turretPosition.getValueAsDouble() * 360);
     double absAngleRad =
-  Units.degreesToRadians(encoderA.getAbsolutePosition().getValueAsDouble() * 360);
+        Units.degreesToRadians(encoderA.getAbsolutePosition().getValueAsDouble() * 360);
 
     double errorRad = MathUtil.angleModulus(motorAngleRad - absAngleRad);
     return Math.abs(Units.radiansToDegrees(errorRad)) > toleranceDeg;
@@ -180,6 +185,5 @@ public class Turret extends SubsystemBase {
     SmartDashboard.putNumber("TwoEncoder Angle", getAbsoluteTurretPosition().in(Degrees));
     SmartDashboard.putNumber("Turret Angle", turretPosition.getValueAsDouble());
     SmartDashboard.putBoolean("Drifted too much", hasDriftedTooMuch(5));
-
   }
 }
