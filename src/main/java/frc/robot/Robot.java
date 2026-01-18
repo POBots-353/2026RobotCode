@@ -14,6 +14,7 @@ import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 import edu.wpi.first.wpilibj.util.WPILibVersion;
 import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.CommandScheduler;
+import frc.robot.util.AllianceUtil;
 import frc.robot.util.LogUtil;
 
 /**
@@ -90,6 +91,8 @@ public class Robot extends TimedRobot {
     SmartDashboard.putNumber("Voltage", RobotController.getBatteryVoltage());
     SmartDashboard.putNumber("Match Time", DriverStation.getMatchTime());
 
+    SmartDashboard.putNumber("Time Until Shift", AllianceUtil.timeUntilShift());
+
     double codeRuntime = (Timer.getFPGATimestamp() - startTime) * 1000.0;
     SmartDashboard.putNumber("Code Runtime (ms)", codeRuntime);
   }
@@ -125,11 +128,14 @@ public class Robot extends TimedRobot {
     if (m_autonomousCommand != null) {
       m_autonomousCommand.cancel();
     }
+
   }
 
   /** This function is called periodically during operator control. */
   @Override
-  public void teleopPeriodic() {}
+  public void teleopPeriodic() {
+
+  }
 
   @Override
   public void testInit() {
