@@ -6,13 +6,25 @@ package frc.robot;
 
 import static edu.wpi.first.units.Units.FeetPerSecond;
 import static edu.wpi.first.units.Units.RotationsPerSecond;
+import static edu.wpi.first.units.Units.RotationsPerSecondPerSecond;
 import static edu.wpi.first.units.Units.Seconds;
 
+import com.ctre.phoenix6.configs.CurrentLimitsConfigs;
+import com.ctre.phoenix6.configs.FeedbackConfigs;
+import com.ctre.phoenix6.configs.MotionMagicConfigs;
+import com.ctre.phoenix6.configs.MotorOutputConfigs;
+import com.ctre.phoenix6.configs.Slot0Configs;
+import com.ctre.phoenix6.configs.SoftwareLimitSwitchConfigs;
+import com.ctre.phoenix6.configs.TalonFXConfiguration;
+import com.ctre.phoenix6.signals.InvertedValue;
+import com.ctre.phoenix6.signals.NeutralModeValue;
+import com.ctre.phoenix6.signals.StaticFeedforwardSignValue;
 import edu.wpi.first.apriltag.AprilTagFieldLayout;
 import edu.wpi.first.math.geometry.Pose2d;
 import edu.wpi.first.math.geometry.Rotation2d;
 import edu.wpi.first.math.geometry.Rotation3d;
 import edu.wpi.first.math.geometry.Transform3d;
+import edu.wpi.first.math.geometry.Translation3d;
 import edu.wpi.first.math.util.Units;
 import edu.wpi.first.units.measure.AngularAcceleration;
 import edu.wpi.first.units.measure.AngularVelocity;
@@ -98,6 +110,70 @@ public final class Constants {
 
     public static final Pose2d hubBlueAlliance = new Pose2d(4.625594, 4.03479, Rotation2d.kZero);
     public static final Pose2d hubRedAlliance = new Pose2d(11.915394, 4.03479, Rotation2d.kZero);
+  }
+
+  public static class TurretConstants {
+    public static final double TURRET_GEAR_TEETH = 210.0;
+    public static final double MOTOR_GEAR_TEETH = 30.0;
+    public static final double INTERNAL_MOTOR_RATIO = 9.0; // Kraken internal
+
+    public static final double toleranceDeg = 20;
+
+    public static final double TOTAL_GEAR_RATIO =
+        (TURRET_GEAR_TEETH / MOTOR_GEAR_TEETH) * INTERNAL_MOTOR_RATIO;
+
+    public static final double MIN_DEGREES = -540.0;
+    public static final double MAX_DEGREES = 540.0;
+
+    public static final MotionMagicConfigs motionMagicConfigs =
+        new MotionMagicConfigs()
+            .withMotionMagicCruiseVelocity(RotationsPerSecond.of(40))
+            .withMotionMagicAcceleration(RotationsPerSecondPerSecond.of(80));
+
+    public static final Slot0Configs slot0Configs =
+        new Slot0Configs()
+            .withKS(0.254)
+            .withKV(2.353)
+            .withKA(0.00)
+            .withKG(0.00)
+            .withKP(50)
+            .withKI(0.00)
+            .withKD(0.00)
+            .withStaticFeedforwardSign(StaticFeedforwardSignValue.UseVelocitySign);
+
+    public static final FeedbackConfigs feedbackConfigs =
+        new FeedbackConfigs().withSensorToMechanismRatio(TOTAL_GEAR_RATIO);
+
+    public static final MotorOutputConfigs motorOutputConfigs =
+        new MotorOutputConfigs()
+            .withInverted(
+                InvertedValue.CounterClockwise_Positive) // needs to spin left when wires up
+            .withNeutralMode(NeutralModeValue.Coast);
+
+    public static final SoftwareLimitSwitchConfigs softwareLimitSwitchConfigs =
+        new SoftwareLimitSwitchConfigs()
+            .withForwardSoftLimitThreshold(MAX_DEGREES)
+            .withForwardSoftLimitEnable(true)
+            .withReverseSoftLimitThreshold(MIN_DEGREES)
+            .withReverseSoftLimitEnable(true);
+
+    public static final CurrentLimitsConfigs currentLimitConfigs =
+        new CurrentLimitsConfigs().withSupplyCurrentLimit(45).withSupplyCurrentLimitEnable(true);
+
+    public static final TalonFXConfiguration turretConfigs =
+        new TalonFXConfiguration()
+            .withCurrentLimits(currentLimitConfigs)
+            .withSlot0(slot0Configs)
+            .withMotionMagic(motionMagicConfigs)
+            .withFeedback(feedbackConfigs)
+            .withMotorOutput(motorOutputConfigs)
+            .withSoftwareLimitSwitch(softwareLimitSwitchConfigs);
+
+    public static final Translation3d turretOnRobot = new Translation3d(-0.26, .26, 0);
+
+    public static final int turretMotorID = 5;
+    public static final int encoderAID = 6;
+    public static final int encoderBID = 7;
 
   }
 }

@@ -4,6 +4,7 @@
 
 package frc.robot;
 
+import edu.wpi.first.math.geometry.Pose2d;
 import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.Commands;
 import edu.wpi.first.wpilibj2.command.button.CommandXboxController;
@@ -13,6 +14,8 @@ import frc.robot.Constants.SwerveConstants;
 import frc.robot.commands.TeleopSwerve;
 import frc.robot.generated.TunerConstants;
 import frc.robot.subsystems.Swerve;
+import frc.robot.subsystems.Turret;
+import frc.robot.util.AllianceUtil;
 
 /**
  * This class is where the bulk of the robot should be declared. Since Command-based is a
@@ -27,10 +30,14 @@ public class RobotContainer {
 
   private final Swerve swerve = TunerConstants.createDrivetrain();
 
+  private final Turret turret = new Turret();
+
   /** The container for the robot. Contains subsystems, OI devices, and commands. */
   public RobotContainer() {
     // Configure the trigger bindings
     configureBindings();
+
+    turret.setDefaultCommand(turret.faceTarget(()-> AllianceUtil.getHubPose(), ()-> swerve.getRobotPose()));
   }
 
   /**
