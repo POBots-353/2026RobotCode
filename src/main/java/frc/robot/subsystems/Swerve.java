@@ -15,11 +15,13 @@ import edu.wpi.first.math.Vector;
 import edu.wpi.first.math.geometry.Pose2d;
 import edu.wpi.first.math.geometry.Pose3d;
 import edu.wpi.first.math.geometry.Rotation2d;
+import edu.wpi.first.math.geometry.Transform2d;
 import edu.wpi.first.math.geometry.Transform3d;
 import edu.wpi.first.math.numbers.N1;
 import edu.wpi.first.math.numbers.N3;
 import edu.wpi.first.math.numbers.N8;
 import edu.wpi.first.math.util.Units;
+import edu.wpi.first.units.measure.Angle;
 import edu.wpi.first.wpilibj.DriverStation;
 import edu.wpi.first.wpilibj.DriverStation.Alliance;
 import edu.wpi.first.wpilibj.Notifier;
@@ -31,8 +33,11 @@ import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.Subsystem;
 import edu.wpi.first.wpilibj2.command.sysid.SysIdRoutine;
 import frc.robot.Constants.FieldConstants;
+import frc.robot.Constants.TurretConstants;
 import frc.robot.Constants.VisionConstants;
 import frc.robot.generated.TunerConstants.TunerSwerveDrivetrain;
+import frc.robot.util.AllianceUtil;
+import frc.robot.util.ExtendedVisionSystemSim;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
@@ -44,7 +49,6 @@ import org.photonvision.PhotonPoseEstimator;
 import org.photonvision.PhotonPoseEstimator.PoseStrategy;
 import org.photonvision.simulation.PhotonCameraSim;
 import org.photonvision.simulation.SimCameraProperties;
-import org.photonvision.simulation.VisionSystemSim;
 import org.photonvision.targeting.PhotonPipelineResult;
 import org.photonvision.targeting.PhotonTrackedTarget;
 
@@ -113,7 +117,7 @@ public class Swerve extends TunerSwerveDrivetrain implements Subsystem {
 
   private SwerveDriveState stateCache = getState();
 
-  private VisionSystemSim visionSim;
+  private ExtendedVisionSystemSim visionSim;
 
   private PhotonCameraSim arducamLeftSim;
   private PhotonCameraSim arducamRightSim;
@@ -363,6 +367,13 @@ public class Swerve extends TunerSwerveDrivetrain implements Subsystem {
     Pose2d robotPose = stateCache.Pose;
 
     field.getObject("EstimatedRobot").setPose(robotPose);
+
+    visionSim.addFieldObject(
+        "Turret",
+        stateCache.Pose.transformBy(
+            new Transform2d(
+                TurretConstants.turretOnRobot.toTranslation2d(),
+                simFaceTowards(AllianceUtil.getHubPose(), stateCache.Pose))));
 
     visionSim.update(robotPose);
   }
@@ -616,7 +627,7 @@ public class Swerve extends TunerSwerveDrivetrain implements Subsystem {
 
   private void initVisionSim() {
     SmartDashboard.putData("Swerve/Field", field);
-    visionSim = new VisionSystemSim("main");
+    visionSim = new ExtendedVisionSystemSim("main");
 
     visionSim.addAprilTags(FieldConstants.aprilTagLayout);
 
@@ -672,4 +683,22 @@ public class Swerve extends TunerSwerveDrivetrain implements Subsystem {
     arducamFrontSim.enableRawStream(true);
     arducamFrontSim.enableProcessedStream(true);
   }
+
+    private Rotation2d simFaceTowards(Pose2d target, Pose2d robotPose) {
+    Pose2d turretPose =
+        robotPose.transformBy(
+            new Transform2d(TurretConstants.turretOnRobot.toTranslation2d(), Rotation2d.kZero));
+
+    Rotation2d turretAngle = target.getTranslation().minus(turretPose.getTranslation()).getAngle();
+    Rotation2d angleToFace = turretAngle.minus(robotPose.getRotation());
+    Angle testAngle = Degrees.of(angleToFace.getDegrees());
+
+    return Rotation2d.fromDegrees(testAngle.in(Degrees));
+  }
+
+  public Pose2d getRobotPose() {
+    return stateCache.Pose;
+  }
+
+
 }
