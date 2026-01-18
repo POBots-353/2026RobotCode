@@ -283,26 +283,28 @@ public class Swerve extends TunerSwerveDrivetrain implements Subsystem {
     return run(() -> this.setControl(request.get()));
   }
 
-  /**
-   * Runs the SysId Quasistatic test in the given direction for the routine specified by {@link
-   * #m_sysIdRoutineToApply}.
-   *
-   * @param direction Direction of the SysId Quasistatic test
-   * @return Command to run
-   */
-  public Command sysIdQuasistatic(SysIdRoutine.Direction direction) {
-    return m_sysIdRoutineToApply.quasistatic(direction);
+  public Command sysIdQuasistaticRotation(SysIdRoutine.Direction direction) {
+    return m_sysIdRoutineRotation.quasistatic(direction);
   }
 
-  /**
-   * Runs the SysId Dynamic test in the given direction for the routine specified by {@link
-   * #m_sysIdRoutineToApply}.
-   *
-   * @param direction Direction of the SysId Dynamic test
-   * @return Command to run
-   */
-  public Command sysIdDynamic(SysIdRoutine.Direction direction) {
-    return m_sysIdRoutineToApply.dynamic(direction);
+  public Command sysIdDynamicRotation(SysIdRoutine.Direction direction) {
+    return m_sysIdRoutineRotation.dynamic(direction);
+  }
+
+  public Command sysIdQuasistaticTranslation(SysIdRoutine.Direction direction) {
+    return m_sysIdRoutineTranslation.quasistatic(direction);
+  }
+
+  public Command sysIdDynamicTranslation(SysIdRoutine.Direction direction) {
+    return m_sysIdRoutineTranslation.dynamic(direction);
+  }
+
+  public Command sysIdQuasistaticSteer(SysIdRoutine.Direction direction) {
+    return m_sysIdRoutineSteer.quasistatic(direction);
+  }
+
+  public Command sysIdDynamicSteer(SysIdRoutine.Direction direction) {
+    return m_sysIdRoutineSteer.dynamic(direction);
   }
 
   @Override
