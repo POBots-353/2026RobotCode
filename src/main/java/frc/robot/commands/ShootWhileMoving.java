@@ -33,7 +33,8 @@
 //     driveAngleToleranceMap.put(4.6, 10.0);
 //   }
 
-//   private static InterpolatingDoubleTreeMap armAngleToleranceMap = new InterpolatingDoubleTreeMap();
+//   private static InterpolatingDoubleTreeMap armAngleToleranceMap = new
+// InterpolatingDoubleTreeMap();
 
 //   static {
 //     armAngleToleranceMap.put(1.36, 1.5);
@@ -191,7 +192,8 @@
 //     // Calculate robot angle and drive speeds (copied from TeleopSwerve command)
 //     double forwardMetersPerSecond =
 //         -forwardSpeed.getAsDouble() * maxTranslationalSpeed.getAsDouble();
-//     double strafeMetersPerSecond = strafeSpeed.getAsDouble() * maxTranslationalSpeed.getAsDouble();
+//     double strafeMetersPerSecond = strafeSpeed.getAsDouble() *
+// maxTranslationalSpeed.getAsDouble();
 
 //     forwardMetersPerSecond = forwardRateLimiter.calculate(forwardMetersPerSecond);
 //     strafeMetersPerSecond = strafeRateLimiter.calculate(strafeMetersPerSecond);

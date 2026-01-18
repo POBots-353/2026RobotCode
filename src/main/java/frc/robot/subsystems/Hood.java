@@ -12,6 +12,7 @@ import static edu.wpi.first.units.Units.Radians;
 import com.ctre.phoenix6.StatusSignal;
 import com.ctre.phoenix6.controls.MotionMagicVoltage;
 import com.ctre.phoenix6.hardware.TalonFX;
+import edu.wpi.first.epilogue.Logged;
 import edu.wpi.first.math.geometry.Pose2d;
 import edu.wpi.first.math.geometry.Rotation2d;
 import edu.wpi.first.math.geometry.Transform2d;
@@ -28,7 +29,6 @@ import frc.robot.Constants.TurretConstants;
 import java.util.function.Supplier;
 
 public class Hood extends SubsystemBase {
-
   private TalonFX hoodMotor;
   private StatusSignal<Angle> hoodPosition;
 
@@ -55,6 +55,7 @@ public class Hood extends SubsystemBase {
     hoodMotor.setPosition(0);
   }
 
+  @Logged(name = "Hood Angle")
   public Angle getHoodAngle() {
     return hoodPosition.getValue();
   }

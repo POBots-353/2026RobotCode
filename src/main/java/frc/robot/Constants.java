@@ -195,16 +195,8 @@ public final class Constants {
 
     private static final double hoodGearRatio = 100.0;
 
-    // Hood limits (degrees)
-    private static final double minAngle = 15.0;
-    private static final double maxAngle = 60.0;
-
-    private static final double hoodVelocity = 80;
-    private static final double hoodAcceleration = 160;
-
-    private static final double kP = 0.0;
-    private static final double kI = 0.0;
-    private static final double kD = 0.5;
+    private static final Angle minAngle = Degrees.of(15.0);
+    private static final Angle maxAngle = Degrees.of(60.0);
 
     public static final MotionMagicConfigs motionMagicConfigs =
         new MotionMagicConfigs()

@@ -133,6 +133,12 @@ public class Swerve extends TunerSwerveDrivetrain implements Subsystem {
 
   private List<PoseEstimate> poseEstimates = new ArrayList<>();
 
+  // Never called, only used to allow logging the poses being used
+  @Logged(name = "Accepted Poses")
+  public List<Pose3d> acceptedPosesList() {
+    return poseEstimates.stream().map((p) -> p.estimatedPose()).toList();
+  }
+
   /* Blue alliance sees forward as 0 degrees (toward red alliance wall) */
   private static final Rotation2d kBlueAlliancePerspectiveRotation = Rotation2d.kZero;
   /* Red alliance sees forward as 180 degrees (toward blue alliance wall) */
@@ -196,9 +202,6 @@ public class Swerve extends TunerSwerveDrivetrain implements Subsystem {
               },
               null,
               this));
-
-  /* The SysId routine to test */
-  private SysIdRoutine m_sysIdRoutineToApply = m_sysIdRoutineTranslation;
 
   /**
    * Constructs a CTRE SwerveDrivetrain using the specified constants.
@@ -604,7 +607,7 @@ public class Swerve extends TunerSwerveDrivetrain implements Subsystem {
     }
 
     Optional<Rotation2d> rotationAtTime =
-        samplePoseAt(Utils.fpgaToCurrentTime(timestampSeconds)).map((pose) -> pose.getRotation());
+        samplePoseAt(timestampSeconds).map((pose) -> pose.getRotation());
 
     if (rotationAtTime.isEmpty()) {
       return false;
@@ -662,9 +665,12 @@ public class Swerve extends TunerSwerveDrivetrain implements Subsystem {
             .setLatencyStdDevMs(15)
             .setExposureTimeMs(45);
 
-    arducamLeftSim = new PhotonCameraSim(arducamLeft, arducamProperties);
-    arducamRightSim = new PhotonCameraSim(arducamRight, arducamProperties);
-    arducamFrontSim = new PhotonCameraSim(arducamFront, arducamProperties);
+    arducamLeftSim =
+        new PhotonCameraSim(arducamLeft, arducamProperties, FieldConstants.aprilTagLayout);
+    arducamRightSim =
+        new PhotonCameraSim(arducamRight, arducamProperties, FieldConstants.aprilTagLayout);
+    arducamFrontSim =
+        new PhotonCameraSim(arducamFront, arducamProperties, FieldConstants.aprilTagLayout);
 
     visionSim.addCamera(arducamLeftSim, VisionConstants.arducamLeftTransform);
     visionSim.addCamera(arducamRightSim, VisionConstants.arducamRightTransform);

@@ -54,11 +54,9 @@ public class RobotContainer {
 
     configureAutoChooser();
 
-    turret.setDefaultCommand(
-        turret.faceTarget(() -> AllianceUtil.getHubPose(), () -> swerve.getRobotPose()));
+    turret.setDefaultCommand(turret.faceTarget(AllianceUtil::getHubPose, swerve::getRobotPose));
 
-    hood.setDefaultCommand(
-        hood.aimForTarget(() -> AllianceUtil.getHubPose(), () -> swerve.getRobotPose()));
+    hood.setDefaultCommand(hood.aimForTarget(AllianceUtil::getHubPose, swerve::getRobotPose));
 
     swerve.registerTelemetry(swerveTelemetry::telemeterize);
   }
