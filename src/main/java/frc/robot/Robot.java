@@ -19,6 +19,9 @@ import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.CommandScheduler;
 import frc.robot.util.AllianceUtil;
 import frc.robot.util.LogUtil;
+import java.lang.management.GarbageCollectorMXBean;
+import java.lang.management.ManagementFactory;
+import java.util.List;
 
 /**
  * The methods in this class are called automatically corresponding to each mode, as described in
@@ -30,6 +33,8 @@ public class Robot extends TimedRobot {
 
   @Logged(name = "Robot")
   private final RobotContainer m_robotContainer;
+
+  private final GcStatsCollector gcStatsCollector = new GcStatsCollector();
 
   /**
    * This function is run when the robot is first started up and should be used for any
@@ -98,6 +103,8 @@ public class Robot extends TimedRobot {
     // block in order for anything in the Command-based framework to work.
     CommandScheduler.getInstance().run();
 
+    gcStatsCollector.update();
+
     SmartDashboard.putNumber("RoboRIO/CPU Temperature", RobotController.getCPUTemp());
     SmartDashboard.putBoolean("RoboRIO/RSL", RobotController.getRSLState());
     SmartDashboard.putNumber("RoboRIO/Input Current", RobotController.getInputCurrent());
@@ -165,4 +172,27 @@ public class Robot extends TimedRobot {
   /** This function is called periodically whilst in simulation. */
   @Override
   public void simulationPeriodic() {}
+
+  private static final class GcStatsCollector {
+    private List<GarbageCollectorMXBean> gcBeans = ManagementFactory.getGarbageCollectorMXBeans();
+    private final long[] lastTimes = new long[gcBeans.size()];
+    private final long[] lastCounts = new long[gcBeans.size()];
+
+    public void update() {
+      long accumTime = 0;
+      long accumCounts = 0;
+      for (int i = 0; i < gcBeans.size(); i++) {
+        long gcTime = gcBeans.get(i).getCollectionTime();
+        long gcCount = gcBeans.get(i).getCollectionCount();
+        accumTime += gcTime - lastTimes[i];
+        accumCounts += gcCount - lastCounts[i];
+
+        lastTimes[i] = gcTime;
+        lastCounts[i] = gcCount;
+      }
+
+      SmartDashboard.putNumber("GC Stats/GC Time MS", (double) accumTime);
+      SmartDashboard.putNumber("GC Stats/GC Counts", (double) accumCounts);
+    }
+  }
 }
