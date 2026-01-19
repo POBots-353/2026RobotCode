@@ -8,6 +8,7 @@ import static edu.wpi.first.units.Units.Degrees;
 import static edu.wpi.first.units.Units.Meters;
 import static edu.wpi.first.units.Units.MetersPerSecond;
 import static edu.wpi.first.units.Units.Radians;
+import static edu.wpi.first.units.Units.Rotations;
 
 import com.ctre.phoenix6.StatusSignal;
 import com.ctre.phoenix6.controls.MotionMagicVoltage;
@@ -32,7 +33,7 @@ public class Hood extends SubsystemBase {
   private TalonFX hoodMotor;
   private StatusSignal<Angle> hoodPosition;
 
-  private final InterpolatingDoubleTreeMap hoodAngleMap = new InterpolatingDoubleTreeMap();
+  private final InterpolatingDoubleTreeMap hoodAngleMap = HoodConstants.hoodAngleMap;
 
   private final MotionMagicVoltage motionMagicRequest = new MotionMagicVoltage(0);
 
@@ -43,12 +44,6 @@ public class Hood extends SubsystemBase {
     zeroHood();
 
     hoodPosition = hoodMotor.getPosition();
-
-    hoodAngleMap.put(1.5, 1.0);
-    hoodAngleMap.put(2.0, 2.0);
-    hoodAngleMap.put(2.5, 3.0);
-    hoodAngleMap.put(3.0, 4.0);
-    hoodAngleMap.put(3.53, 5.0); // random values (Distance, ROTATIONS)
   }
 
   private void zeroHood() {
@@ -100,6 +95,14 @@ public class Hood extends SubsystemBase {
     return Radians.of(Math.atan2(numerator, denominator));
   }
 
+  public void stopHood() {
+    hoodMotor.stopMotor();
+  }
+
+  public void setTargetAngle(Angle targetAngle) {
+    hoodMotor.setControl(motionMagicRequest.withPosition(targetAngle.in(Rotations)));
+  }
+
   public Command stop() {
     return runOnce(() -> hoodMotor.stopMotor()).withName("Stop Hood");
   }
@@ -119,7 +122,7 @@ public class Hood extends SubsystemBase {
                   .get()
                   .transformBy(
                       new Transform2d(
-                          TurretConstants.turretOnRobot.toTranslation2d(), Rotation2d.kZero));
+                          TurretConstants.robotToTurret.toTranslation2d(), Rotation2d.kZero));
           double distance =
               turretPose.getTranslation().getDistance(targetPoseSupplier.get().getTranslation());
 
@@ -138,7 +141,7 @@ public class Hood extends SubsystemBase {
                   .get()
                   .transformBy(
                       new Transform2d(
-                          TurretConstants.turretOnRobot.toTranslation2d(), Rotation2d.kZero));
+                          TurretConstants.robotToTurret.toTranslation2d(), Rotation2d.kZero));
           Distance distance =
               Meters.of(
                   turretPose
@@ -149,7 +152,7 @@ public class Hood extends SubsystemBase {
               getPhysicsHoodAngle(
                   distance,
                   FieldConstants.hubHeight,
-                  TurretConstants.turretOnRobot.getMeasureZ(),
+                  TurretConstants.robotToTurret.getMeasureZ(),
                   exitVelocitySupplier.get());
 
           hoodMotor.setControl(motionMagicRequest.withPosition(angle));

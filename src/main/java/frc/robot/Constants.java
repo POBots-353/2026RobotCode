@@ -28,6 +28,7 @@ import edu.wpi.first.math.geometry.Rotation2d;
 import edu.wpi.first.math.geometry.Rotation3d;
 import edu.wpi.first.math.geometry.Transform3d;
 import edu.wpi.first.math.geometry.Translation3d;
+import edu.wpi.first.math.interpolation.InterpolatingDoubleTreeMap;
 import edu.wpi.first.math.util.Units;
 import edu.wpi.first.units.measure.Angle;
 import edu.wpi.first.units.measure.AngularAcceleration;
@@ -177,7 +178,7 @@ public final class Constants {
             .withMotorOutput(motorOutputConfigs)
             .withSoftwareLimitSwitch(softwareLimitSwitchConfigs);
 
-    public static final Translation3d turretOnRobot =
+    public static final Translation3d robotToTurret =
         new Translation3d(-0.26, .26, Units.inchesToMeters(10.826));
 
     public static final int turretMotorID = 5;
@@ -241,5 +242,20 @@ public final class Constants {
             .withFeedback(feedbackConfigs)
             .withMotorOutput(motorOutputConfigs)
             .withSoftwareLimitSwitch(softwareLimitSwitchConfigs);
+
+
+
+
+
+  public static final InterpolatingDoubleTreeMap hoodAngleMap = new InterpolatingDoubleTreeMap();
+
+static {
+    hoodAngleMap.put(1.5, 1.0);
+    hoodAngleMap.put(2.0, 2.0);
+    hoodAngleMap.put(2.5, 3.0);
+    hoodAngleMap.put(3.0, 4.0);
+    hoodAngleMap.put(3.53, 5.0); // random values (Distance, ROTATIONS)
+}
+
   }
 }
