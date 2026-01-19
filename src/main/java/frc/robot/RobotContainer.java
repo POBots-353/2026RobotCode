@@ -71,12 +71,16 @@ public class RobotContainer {
    * joysticks}.
    */
   private void configureDriverBindings() {
+    Trigger slowMode = driverController.leftTrigger();
     swerve.setDefaultCommand(
         new TeleopSwerve(
             driverController::getLeftY,
             driverController::getLeftX,
             driverController::getRightX,
             () -> {
+              if (slowMode.getAsBoolean()) {
+                return SwerveConstants.slowModeMaxTranslationalSpeed;
+              }
               return SwerveConstants.maxTranslationalSpeed;
             },
             swerve));
