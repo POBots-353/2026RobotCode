@@ -20,6 +20,7 @@ import edu.wpi.first.math.MathUtil;
 import edu.wpi.first.math.geometry.Pose2d;
 import edu.wpi.first.math.geometry.Rotation2d;
 import edu.wpi.first.math.geometry.Transform2d;
+import edu.wpi.first.math.geometry.Translation2d;
 import edu.wpi.first.math.util.Units;
 import edu.wpi.first.units.measure.Angle;
 import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
@@ -96,7 +97,7 @@ public class Turret extends SubsystemBase {
           Pose2d turretPose =
               robotPose.transformBy(
                   new Transform2d(
-                      TurretConstants.turretOnRobot.toTranslation2d(), Rotation2d.kZero));
+                      TurretConstants.robotToTurret.toTranslation2d(), Rotation2d.kZero));
 
           Rotation2d turretAngle =
               target.getTranslation().minus(turretPose.getTranslation()).getAngle();
@@ -107,6 +108,28 @@ public class Turret extends SubsystemBase {
           turretMotor.setControl(motionMagicRequest.withPosition(finalAngle.in(Rotations)));
         })
         .withName("Turret Face Target");
+  }
+
+  public Angle angleToFaceTarget(Translation2d targetPose, Pose2d robotPose) {
+
+          Pose2d turretPose =
+              robotPose.transformBy(
+                  new Transform2d(
+                      TurretConstants.robotToTurret.toTranslation2d(), Rotation2d.kZero));
+
+          Rotation2d turretAngle =
+              targetPose.minus(turretPose.getTranslation()).getAngle();
+          Rotation2d angleToFace = turretAngle.minus(robotPose.getRotation());
+          Angle finalAngle = Degrees.of(angleToFace.getDegrees());
+          finalAngle = optimizeAngle(finalAngle);
+
+      return finalAngle;
+
+  }
+
+  @Logged(name = "Turret Angle")
+  public Angle getTurretAngle() {
+    return turretPosition.getValue();
   }
 
   @Logged(name = "Absolute Position")
@@ -157,6 +180,10 @@ public class Turret extends SubsystemBase {
             TurretConstants.MAX_ANGLE.in(Degrees));
 
     return Degrees.of(candidate);
+  }
+
+  public void stopTurret() {
+    turretMotor.stopMotor();
   }
 
   public Command setZero() {
