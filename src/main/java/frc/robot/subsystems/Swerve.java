@@ -22,6 +22,7 @@ import edu.wpi.first.math.geometry.Pose3d;
 import edu.wpi.first.math.geometry.Rotation2d;
 import edu.wpi.first.math.geometry.Transform2d;
 import edu.wpi.first.math.geometry.Transform3d;
+import edu.wpi.first.math.kinematics.ChassisSpeeds;
 import edu.wpi.first.math.kinematics.SwerveModuleState;
 import edu.wpi.first.math.numbers.N1;
 import edu.wpi.first.math.numbers.N3;
@@ -372,7 +373,7 @@ public class Swerve extends TunerSwerveDrivetrain implements Subsystem {
         "Turret",
         stateCache.Pose.transformBy(
             new Transform2d(
-                TurretConstants.turretOnRobot.toTranslation2d(),
+                TurretConstants.robotToTurret.toTranslation2d(),
                 simFaceTowards(AllianceUtil.getHubPose(), stateCache.Pose))));
 
     visionSim.update(robotPose);
@@ -733,7 +734,7 @@ public class Swerve extends TunerSwerveDrivetrain implements Subsystem {
   private Rotation2d simFaceTowards(Pose2d target, Pose2d robotPose) {
     Pose2d turretPose =
         robotPose.transformBy(
-            new Transform2d(TurretConstants.turretOnRobot.toTranslation2d(), Rotation2d.kZero));
+            new Transform2d(TurretConstants.robotToTurret.toTranslation2d(), Rotation2d.kZero));
 
     Rotation2d turretAngle = target.getTranslation().minus(turretPose.getTranslation()).getAngle();
     Rotation2d angleToFace = turretAngle.minus(robotPose.getRotation());
@@ -744,6 +745,10 @@ public class Swerve extends TunerSwerveDrivetrain implements Subsystem {
 
   public Pose2d getRobotPose() {
     return stateCache.Pose;
+  }
+
+  public ChassisSpeeds getChassisSpeeds() {
+    return stateCache.Speeds;
   }
 
   @Logged(name = "Rotation")
