@@ -5,28 +5,11 @@
 package frc.robot.commands;
 
 import static edu.wpi.first.units.Units.Degrees;
-import static edu.wpi.first.units.Units.MetersPerSecond;
-import static edu.wpi.first.units.Units.MetersPerSecondPerSecond;
-import static edu.wpi.first.units.Units.RotationsPerSecond;
-import static edu.wpi.first.units.Units.RotationsPerSecondPerSecond;
-
-import java.util.function.DoubleSupplier;
-import java.util.function.Supplier;
-
-import com.ctre.phoenix6.swerve.SwerveModule.SteerRequestType;
-import com.ctre.phoenix6.swerve.SwerveRequest;
-import com.ctre.phoenix6.swerve.SwerveRequest.ForwardPerspectiveValue;
 
 import edu.wpi.first.math.filter.Debouncer;
 import edu.wpi.first.math.filter.LinearFilter;
-import edu.wpi.first.math.filter.SlewRateLimiter;
 import edu.wpi.first.math.kinematics.ChassisSpeeds;
-import edu.wpi.first.math.util.Units;
-import edu.wpi.first.units.measure.LinearVelocity;
 import edu.wpi.first.wpilibj2.command.Command;
-import frc.robot.Constants;
-import frc.robot.Constants.FieldConstants;
-import frc.robot.Constants.SwerveConstants;
 import frc.robot.subsystems.Hood;
 import frc.robot.subsystems.Shooter;
 import frc.robot.subsystems.Swerve;
@@ -45,8 +28,8 @@ public class ShootOnTheMove extends Command {
   private Debouncer turretSetPointDebouncer = new Debouncer(0.1);
   private Debouncer shooterDebouncer = new Debouncer(0.1);
 
-  private double turretTolerance = 3.53; //deg
-  private double hoodTolerance = 3.53; //deg
+  private double turretTolerance = 3.53; // deg
+  private double hoodTolerance = 3.53; // deg
   private boolean shooterAtSetPoint = true;
 
   private LinearFilter accelXFilter = LinearFilter.movingAverage(2);
@@ -54,13 +37,11 @@ public class ShootOnTheMove extends Command {
 
   private ChassisSpeeds previousSpeeds = new ChassisSpeeds();
 
-
-  public ShootOnTheMove( 
-      Swerve swerve, Turret turret, Hood hood, Shooter shooter) {
-        this.swerve = swerve;
-        this.turret = turret;
-        this.hood = hood;
-        this.shooter = shooter;
+  public ShootOnTheMove(Swerve swerve, Turret turret, Hood hood, Shooter shooter) {
+    this.swerve = swerve;
+    this.turret = turret;
+    this.hood = hood;
+    this.shooter = shooter;
     addRequirements(hood, turret, shooter);
   }
 
@@ -74,7 +55,6 @@ public class ShootOnTheMove extends Command {
     accelYFilter.reset();
 
     previousSpeeds = swerve.getChassisSpeeds();
-
   }
 
   // Called every time the scheduler runs while the command is scheduled.
@@ -88,40 +68,36 @@ public class ShootOnTheMove extends Command {
     double fieldAccelX = accelXFilter.calculate(fieldAcceleration.vxMetersPerSecond);
     double fieldAccelY = accelYFilter.calculate(fieldAcceleration.vyMetersPerSecond);
 
-    ShootingParameters shootingParameters = ShotCalculator.getParameters(swerve, turret,fieldAccelX, fieldAccelY);
+    ShootingParameters shootingParameters =
+        ShotCalculator.getParameters(swerve, turret, fieldAccelX, fieldAccelY);
 
     turret.setTargetAngle(shootingParameters.turretAngle());
 
     hood.setTargetAngle(shootingParameters.hoodAngle());
 
-    //shooter.setSpeed(shootingParametes.shooterSpeed());
+    // shooter.setSpeed(shootingParametes.shooterSpeed());
 
-    double turretErrorDeg = turret.getTurretAngle().in(Degrees) - shootingParameters.turretAngle().in(Degrees);
-    double hoodErrorDeg = hood.getHoodAngle().in(Degrees) - shootingParameters.hoodAngle().in(Degrees);
+    double turretErrorDeg =
+        turret.getTurretAngle().in(Degrees) - shootingParameters.turretAngle().in(Degrees);
+    double hoodErrorDeg =
+        hood.getHoodAngle().in(Degrees) - shootingParameters.hoodAngle().in(Degrees);
 
-
-   if (turretSetPointDebouncer.calculate(
-    Math.abs(turretErrorDeg) <= turretTolerance
-   ) && hoodSetPointDebouncer.calculate(
-Math.abs(hoodErrorDeg) <= hoodTolerance
-   ) && shooterDebouncer.calculate(
-shooterAtSetPoint
-   )) {
-    //indexer.feed();
-   } else {
-    // indexer.stop();
-   }
-
+    if (turretSetPointDebouncer.calculate(Math.abs(turretErrorDeg) <= turretTolerance)
+        && hoodSetPointDebouncer.calculate(Math.abs(hoodErrorDeg) <= hoodTolerance)
+        && shooterDebouncer.calculate(shooterAtSetPoint)) {
+      // indexer.feed();
+    } else {
+      // indexer.stop();
+    }
   }
 
   // Called once the command ends or is interrupted.
   @Override
   public void end(boolean interrupted) {
     // shooter.stop();
-    //indexer.stop();
+    // indexer.stop();
     turret.stopTurret();
     hood.stopHood();
-
   }
 
   // Returns true when the command should end.

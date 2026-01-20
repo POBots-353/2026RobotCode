@@ -112,19 +112,16 @@ public class Turret extends SubsystemBase {
 
   public Angle angleToFaceTarget(Translation2d targetPose, Pose2d robotPose) {
 
-          Pose2d turretPose =
-              robotPose.transformBy(
-                  new Transform2d(
-                      TurretConstants.robotToTurret.toTranslation2d(), Rotation2d.kZero));
+    Pose2d turretPose =
+        robotPose.transformBy(
+            new Transform2d(TurretConstants.robotToTurret.toTranslation2d(), Rotation2d.kZero));
 
-          Rotation2d turretAngle =
-              targetPose.minus(turretPose.getTranslation()).getAngle();
-          Rotation2d angleToFace = turretAngle.minus(robotPose.getRotation());
-          Angle finalAngle = Degrees.of(angleToFace.getDegrees());
-          finalAngle = optimizeAngle(finalAngle);
+    Rotation2d turretAngle = targetPose.minus(turretPose.getTranslation()).getAngle();
+    Rotation2d angleToFace = turretAngle.minus(robotPose.getRotation());
+    Angle finalAngle = Degrees.of(angleToFace.getDegrees());
+    finalAngle = optimizeAngle(finalAngle);
 
-      return finalAngle;
-
+    return finalAngle;
   }
 
   @Logged(name = "Turret Angle")
