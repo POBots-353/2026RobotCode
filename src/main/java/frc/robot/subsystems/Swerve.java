@@ -11,6 +11,7 @@ import com.ctre.phoenix6.swerve.SwerveRequest;
 import com.pathplanner.lib.auto.AutoBuilder;
 import com.pathplanner.lib.config.RobotConfig;
 import com.pathplanner.lib.controllers.PPHolonomicDriveController;
+import com.pathplanner.lib.path.PathPlannerPath;
 import com.pathplanner.lib.util.PathPlannerLogging;
 import edu.wpi.first.epilogue.Logged;
 import edu.wpi.first.math.Matrix;
@@ -36,6 +37,7 @@ import edu.wpi.first.wpilibj.RobotController;
 import edu.wpi.first.wpilibj.smartdashboard.Field2d;
 import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 import edu.wpi.first.wpilibj2.command.Command;
+import edu.wpi.first.wpilibj2.command.DeferredCommand;
 import edu.wpi.first.wpilibj2.command.Subsystem;
 import edu.wpi.first.wpilibj2.command.sysid.SysIdRoutine;
 import frc.robot.Constants.AutoConstants;
@@ -46,9 +48,13 @@ import frc.robot.generated.TunerConstants.TunerSwerveDrivetrain;
 import frc.robot.util.AllianceUtil;
 import frc.robot.util.ExtendedVisionSystemSim;
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.Collections;
+import java.util.Comparator;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
+import java.util.Set;
 import java.util.function.Supplier;
 import org.photonvision.EstimatedRobotPose;
 import org.photonvision.PhotonCamera;
@@ -309,6 +315,46 @@ public class Swerve extends TunerSwerveDrivetrain implements Subsystem {
 
   public Command sysIdDynamicSteer(SysIdRoutine.Direction direction) {
     return m_sysIdRoutineSteer.dynamic(direction);
+  }
+
+  public Command pathFindToPose(Pose2d targetPose) {
+    return new DeferredCommand(
+        () -> {
+          return AutoBuilder.pathfindToPose(targetPose, AutoConstants.pathConstraints, 0.0);
+        },
+        Set.of(this));
+  }
+
+  public Command pathFindThroughTrench() {
+    return new DeferredCommand(
+            () -> {
+              // List<PathPlannerPath> allTrenchPaths =
+              //     List.of(
+              //         loadPath("AllianceLToMid"),
+              //         loadPath("AllianceRToMid"),
+              //         loadPath("MidToAllianceL"),
+              //         loadPath("MidToAllianceR"));
+
+              // PathPlannerPath closestTrenchPath = nearestPath(stateCache.Pose, allTrenchPaths);
+
+              Pose2d lMid = AllianceUtil.flipPose(FieldConstants.allianceLMid);
+              Pose2d lSide = AllianceUtil.flipPose(FieldConstants.allianceLSide);
+              Pose2d rMid = AllianceUtil.flipPose(FieldConstants.allianceRMid);
+              Pose2d rSide = AllianceUtil.flipPose(FieldConstants.allianceRSide);
+
+              Map<Pose2d, Pose2d> trenchPairs =
+                  Map.of(
+                      lMid, lSide,
+                      lSide, lMid,
+                      rMid, rSide,
+                      rSide, rMid);
+              Pose2d nearest = stateCache.Pose.nearest(trenchPairs.keySet());
+
+              return AutoBuilder.pathfindToPose(
+                  trenchPairs.get(nearest), AutoConstants.pathConstraints);
+            },
+            Set.of(this))
+        .withName("PathFindThroughTrench");
   }
 
   @Override
@@ -764,5 +810,35 @@ public class Swerve extends TunerSwerveDrivetrain implements Subsystem {
   @Logged(name = "Desired States")
   public SwerveModuleState[] getDesiredStates() {
     return stateCache.ModuleTargets;
+  }
+
+  private PathPlannerPath loadPath(String pathName) {
+    try {
+      // return PathPlannerPath.fromChoreoTrajectory(pathName);
+      return PathPlannerPath.fromPathFile(pathName);
+    } catch (Exception e) {
+      return null;
+    }
+  }
+
+  public PathPlannerPath nearestPath(Pose2d referencePose, Collection<PathPlannerPath> paths) {
+    return Collections.min(
+        paths,
+        Comparator.comparing(
+                (PathPlannerPath path) ->
+                    referencePose
+                        .getTranslation()
+                        .getDistance(
+                            AllianceUtil.flipPose(path.getStartingHolonomicPose().get())
+                                .getTranslation()))
+            .thenComparing(
+                (PathPlannerPath path) ->
+                    Math.abs(
+                        referencePose
+                            .getRotation()
+                            .minus(
+                                AllianceUtil.flipPose(path.getStartingHolonomicPose().get())
+                                    .getRotation())
+                            .getRadians())));
   }
 }

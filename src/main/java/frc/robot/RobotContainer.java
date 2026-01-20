@@ -84,6 +84,8 @@ public class RobotContainer {
               return SwerveConstants.maxTranslationalSpeed;
             },
             swerve));
+
+    driverController.a().whileTrue(swerve.pathFindThroughTrench());
   }
 
   private void configureAutoChooser() {

@@ -22,6 +22,7 @@ import com.ctre.phoenix6.signals.InvertedValue;
 import com.ctre.phoenix6.signals.NeutralModeValue;
 import com.ctre.phoenix6.signals.StaticFeedforwardSignValue;
 import com.pathplanner.lib.config.PIDConstants;
+import com.pathplanner.lib.path.PathConstraints;
 import edu.wpi.first.apriltag.AprilTagFieldLayout;
 import edu.wpi.first.math.geometry.Pose2d;
 import edu.wpi.first.math.geometry.Rotation2d;
@@ -114,8 +115,16 @@ public final class Constants {
       }
     }
 
+    public static final double fieldLength = aprilTagLayout.getFieldLength();
+    public static final double fieldWidth = aprilTagLayout.getFieldWidth();
+
     public static final Pose2d hubBlueAlliance = new Pose2d(4.625594, 4.03479, Rotation2d.kZero);
     public static final Pose2d hubRedAlliance = new Pose2d(11.915394, 4.03479, Rotation2d.kZero);
+
+    public static final Pose2d allianceLMid = new Pose2d(6, 7.43, Rotation2d.kZero);
+    public static final Pose2d allianceLSide = new Pose2d(3.2353, 7.43, Rotation2d.kZero);
+    public static final Pose2d allianceRMid = new Pose2d(6, 0.65, Rotation2d.kZero);
+    public static final Pose2d allianceRSide = new Pose2d(3.2353, 0.65, Rotation2d.kZero);
 
     // top of the plastic ring on the hub is 72 inches
     public static final Distance hubHeight = Inches.of(72 - 8);
@@ -181,14 +190,21 @@ public final class Constants {
     public static final Translation3d robotToTurret =
         new Translation3d(-0.26, .26, Units.inchesToMeters(10.826));
 
-    public static final int turretMotorID = 5;
-    public static final int encoderAID = 6;
-    public static final int encoderBID = 7;
+    public static final int turretMotorID = 10;
+    public static final int encoderAID = 11;
+    public static final int encoderBID = 12;
   }
 
   public static class AutoConstants {
     public static final PIDConstants translationPID = new PIDConstants(2, 0.0, 0.1); // 5 2.2
     public static final PIDConstants rotationPID = new PIDConstants(1.4, 0.0, 0.1); // 1  2.8
+
+    public static final PathConstraints pathConstraints =
+        new PathConstraints(
+            SwerveConstants.maxTranslationalSpeed,
+            SwerveConstants.maxTransationalAcceleration,
+            SwerveConstants.maxRotationalSpeed,
+            SwerveConstants.maxAngularAcceleration);
   }
 
   public static class HoodConstants {
@@ -243,19 +259,14 @@ public final class Constants {
             .withMotorOutput(motorOutputConfigs)
             .withSoftwareLimitSwitch(softwareLimitSwitchConfigs);
 
+    public static final InterpolatingDoubleTreeMap hoodAngleMap = new InterpolatingDoubleTreeMap();
 
-
-
-
-  public static final InterpolatingDoubleTreeMap hoodAngleMap = new InterpolatingDoubleTreeMap();
-
-static {
-    hoodAngleMap.put(1.5, 1.0);
-    hoodAngleMap.put(2.0, 2.0);
-    hoodAngleMap.put(2.5, 3.0);
-    hoodAngleMap.put(3.0, 4.0);
-    hoodAngleMap.put(3.53, 5.0); // random values (Distance, ROTATIONS)
-}
-
+    static {
+      hoodAngleMap.put(1.5, 1.0);
+      hoodAngleMap.put(2.0, 2.0);
+      hoodAngleMap.put(2.5, 3.0);
+      hoodAngleMap.put(3.0, 4.0);
+      hoodAngleMap.put(3.53, 5.0); // random values (Distance, ROTATIONS)
+    }
   }
 }
