@@ -40,4 +40,28 @@ public final class Constants {
     public static final AngularAcceleration maxAngularAcceleration =
         maxRotationalSpeed.div(rotationZeroToFull);
   }
+
+  public static class intakeConstants{
+    public static final int armID = 1;
+    public static final int wheelID = 2;
+    public static final int beamID = 3;
+    public static final int joystickID = 4;
+    public static final double voltagePreset = 0;
+/*Gear value TBD || All values random */    
+    public static final double gearRatio = 5.0;  
+    public static final double roationUp = 10; 
+    public static final double rotationDown = 0;
+
+    public static final double speedUp= roationUp * gearRatio;
+    public static final double speedDown= rotationDown * gearRatio; /*gonna be 0 anyway */
+    public static final double slowUp = (rotationDown * gearRatio) / 2;
+    
+
+
+
+
+    public static final double upPosition = 0;
+    public static final double downPosition = 5;
+
+  }
 }
