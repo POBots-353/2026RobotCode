@@ -81,4 +81,13 @@ public class AllianceUtil {
   public static Pose2d getHubPose() {
     return isRedAlliance() ? FieldConstants.hubRedAlliance : FieldConstants.hubBlueAlliance;
   }
+
+  public static Pose2d flipPose(Pose2d pose) {
+    return isRedAlliance()
+        ? new Pose2d(
+            FieldConstants.fieldLength - pose.getX(),
+            FieldConstants.fieldWidth - pose.getY(),
+            pose.getRotation().rotateBy(Rotation2d.kPi))
+        : pose;
+  }
 }
