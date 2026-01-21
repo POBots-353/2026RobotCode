@@ -5,23 +5,65 @@ import static edu.wpi.first.units.Units.*;
 import com.ctre.phoenix6.SignalLogger;
 import com.ctre.phoenix6.Utils;
 import com.ctre.phoenix6.swerve.SwerveDrivetrainConstants;
+import com.ctre.phoenix6.swerve.SwerveModule.DriveRequestType;
 import com.ctre.phoenix6.swerve.SwerveModuleConstants;
 import com.ctre.phoenix6.swerve.SwerveRequest;
+import com.pathplanner.lib.auto.AutoBuilder;
+import com.pathplanner.lib.config.RobotConfig;
+import com.pathplanner.lib.controllers.PPHolonomicDriveController;
+import com.pathplanner.lib.path.PathPlannerPath;
+import com.pathplanner.lib.util.PathPlannerLogging;
+import edu.wpi.first.epilogue.Logged;
 import edu.wpi.first.math.Matrix;
+import edu.wpi.first.math.Nat;
+import edu.wpi.first.math.VecBuilder;
+import edu.wpi.first.math.Vector;
 import edu.wpi.first.math.geometry.Pose2d;
+import edu.wpi.first.math.geometry.Pose3d;
 import edu.wpi.first.math.geometry.Rotation2d;
+import edu.wpi.first.math.geometry.Transform2d;
+import edu.wpi.first.math.geometry.Transform3d;
+import edu.wpi.first.math.kinematics.ChassisSpeeds;
+import edu.wpi.first.math.kinematics.SwerveModuleState;
 import edu.wpi.first.math.numbers.N1;
 import edu.wpi.first.math.numbers.N3;
+import edu.wpi.first.math.numbers.N8;
+import edu.wpi.first.math.util.Units;
+import edu.wpi.first.units.measure.Angle;
 import edu.wpi.first.wpilibj.DriverStation;
 import edu.wpi.first.wpilibj.DriverStation.Alliance;
 import edu.wpi.first.wpilibj.Notifier;
 import edu.wpi.first.wpilibj.RobotController;
+import edu.wpi.first.wpilibj.smartdashboard.Field2d;
+import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 import edu.wpi.first.wpilibj2.command.Command;
+import edu.wpi.first.wpilibj2.command.DeferredCommand;
 import edu.wpi.first.wpilibj2.command.Subsystem;
 import edu.wpi.first.wpilibj2.command.sysid.SysIdRoutine;
+import frc.robot.Constants.AutoConstants;
+import frc.robot.Constants.FieldConstants;
+import frc.robot.Constants.TurretConstants;
+import frc.robot.Constants.VisionConstants;
 import frc.robot.generated.TunerConstants.TunerSwerveDrivetrain;
+import frc.robot.util.AllianceUtil;
+import frc.robot.util.ExtendedVisionSystemSim;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.Collections;
+import java.util.Comparator;
+import java.util.List;
+import java.util.Map;
 import java.util.Optional;
+import java.util.Set;
 import java.util.function.Supplier;
+import org.photonvision.EstimatedRobotPose;
+import org.photonvision.PhotonCamera;
+import org.photonvision.PhotonPoseEstimator;
+import org.photonvision.PhotonPoseEstimator.PoseStrategy;
+import org.photonvision.simulation.PhotonCameraSim;
+import org.photonvision.simulation.SimCameraProperties;
+import org.photonvision.targeting.PhotonPipelineResult;
+import org.photonvision.targeting.PhotonTrackedTarget;
 
 /**
  * Class that extends the Phoenix 6 SwerveDrivetrain class and implements Subsystem so it can easily
@@ -34,6 +76,75 @@ public class Swerve extends TunerSwerveDrivetrain implements Subsystem {
   private static final double kSimLoopPeriod = 0.004; // 4 ms
   private Notifier m_simNotifier = null;
   private double m_lastSimTime;
+
+  public static record PoseEstimate(
+      Pose3d estimatedPose, double timestamp, Vector<N3> visionStandardDeviation)
+      implements Comparable<PoseEstimate> {
+    @Override
+    public int compareTo(PoseEstimate other) {
+      if (timestamp > other.timestamp) {
+        return 1;
+      } else if (timestamp < other.timestamp) {
+        return -1;
+      }
+      return 0;
+    }
+  }
+
+  private final SwerveRequest.ApplyRobotSpeeds pathApplyRobotSpeeds =
+      new SwerveRequest.ApplyRobotSpeeds().withDriveRequestType(DriveRequestType.Velocity);
+
+  private Field2d field = new Field2d();
+
+  private PhotonCamera arducamLeft = new PhotonCamera(VisionConstants.arducamLeftName);
+  private PhotonCamera arducamFront = new PhotonCamera(VisionConstants.arducamFrontName);
+  private PhotonCamera arducamRight = new PhotonCamera(VisionConstants.arducamRightName);
+
+  private PhotonPoseEstimator leftPoseEstimator =
+      new PhotonPoseEstimator(FieldConstants.aprilTagLayout, VisionConstants.arducamLeftTransform);
+
+  private PhotonPoseEstimator rightPoseEstimator =
+      new PhotonPoseEstimator(FieldConstants.aprilTagLayout, VisionConstants.arducamRightTransform);
+
+  private PhotonPoseEstimator frontPoseEstimator =
+      new PhotonPoseEstimator(FieldConstants.aprilTagLayout, VisionConstants.arducamFrontTransform);
+
+  private List<PhotonPipelineResult> latestArducamLeftResult;
+  private List<PhotonPipelineResult> latestArducamRightResult;
+  private List<PhotonPipelineResult> latestArducamFrontResult;
+
+  private Optional<Matrix<N3, N3>> arducamLeftMatrix = Optional.empty();
+  private Optional<Matrix<N8, N1>> arducamLeftDistCoeffs = Optional.empty();
+
+  private Optional<Matrix<N3, N3>> arducamRightMatrix = Optional.empty();
+  private Optional<Matrix<N8, N1>> arducamRightDistCoeffs = Optional.empty();
+
+  private Optional<Matrix<N3, N3>> arducamFrontMatrix = Optional.empty();
+  private Optional<Matrix<N8, N1>> arducamFrontDistCoeffs = Optional.empty();
+
+  private SwerveDriveState stateCache = getState();
+
+  private ExtendedVisionSystemSim visionSim;
+
+  private PhotonCameraSim arducamLeftSim;
+  private PhotonCameraSim arducamRightSim;
+  private PhotonCameraSim arducamFrontSim;
+
+  @Logged(name = "Detected Targets")
+  private List<Pose3d> detectedTargets = new ArrayList<>();
+
+  private List<Integer> detectedAprilTags = new ArrayList<>();
+
+  @Logged(name = "Rejected Poses")
+  private List<Pose3d> rejectedPoses = new ArrayList<>();
+
+  private List<PoseEstimate> poseEstimates = new ArrayList<>();
+
+  // Never called, only used to allow logging the poses being used
+  @Logged(name = "Accepted Poses")
+  public List<Pose3d> acceptedPosesList() {
+    return poseEstimates.stream().map((p) -> p.estimatedPose()).toList();
+  }
 
   /* Blue alliance sees forward as 0 degrees (toward red alliance wall) */
   private static final Rotation2d kBlueAlliancePerspectiveRotation = Rotation2d.kZero;
@@ -99,9 +210,6 @@ public class Swerve extends TunerSwerveDrivetrain implements Subsystem {
               null,
               this));
 
-  /* The SysId routine to test */
-  private SysIdRoutine m_sysIdRoutineToApply = m_sysIdRoutineTranslation;
-
   /**
    * Constructs a CTRE SwerveDrivetrain using the specified constants.
    *
@@ -116,6 +224,7 @@ public class Swerve extends TunerSwerveDrivetrain implements Subsystem {
     super(drivetrainConstants, modules);
     if (Utils.isSimulation()) {
       startSimThread();
+      initVisionSim();
     }
   }
 
@@ -137,6 +246,7 @@ public class Swerve extends TunerSwerveDrivetrain implements Subsystem {
     super(drivetrainConstants, odometryUpdateFrequency, modules);
     if (Utils.isSimulation()) {
       startSimThread();
+      initVisionSim();
     }
   }
 
@@ -169,6 +279,7 @@ public class Swerve extends TunerSwerveDrivetrain implements Subsystem {
         modules);
     if (Utils.isSimulation()) {
       startSimThread();
+      initVisionSim();
     }
   }
 
@@ -182,37 +293,108 @@ public class Swerve extends TunerSwerveDrivetrain implements Subsystem {
     return run(() -> this.setControl(request.get()));
   }
 
-  /**
-   * Runs the SysId Quasistatic test in the given direction for the routine specified by {@link
-   * #m_sysIdRoutineToApply}.
-   *
-   * @param direction Direction of the SysId Quasistatic test
-   * @return Command to run
-   */
-  public Command sysIdQuasistatic(SysIdRoutine.Direction direction) {
-    return m_sysIdRoutineToApply.quasistatic(direction);
+  public Command sysIdQuasistaticRotation(SysIdRoutine.Direction direction) {
+    return m_sysIdRoutineRotation.quasistatic(direction);
   }
 
-  /**
-   * Runs the SysId Dynamic test in the given direction for the routine specified by {@link
-   * #m_sysIdRoutineToApply}.
-   *
-   * @param direction Direction of the SysId Dynamic test
-   * @return Command to run
-   */
-  public Command sysIdDynamic(SysIdRoutine.Direction direction) {
-    return m_sysIdRoutineToApply.dynamic(direction);
+  public Command sysIdDynamicRotation(SysIdRoutine.Direction direction) {
+    return m_sysIdRoutineRotation.dynamic(direction);
+  }
+
+  public Command sysIdQuasistaticTranslation(SysIdRoutine.Direction direction) {
+    return m_sysIdRoutineTranslation.quasistatic(direction);
+  }
+
+  public Command sysIdDynamicTranslation(SysIdRoutine.Direction direction) {
+    return m_sysIdRoutineTranslation.dynamic(direction);
+  }
+
+  public Command sysIdQuasistaticSteer(SysIdRoutine.Direction direction) {
+    return m_sysIdRoutineSteer.quasistatic(direction);
+  }
+
+  public Command sysIdDynamicSteer(SysIdRoutine.Direction direction) {
+    return m_sysIdRoutineSteer.dynamic(direction);
+  }
+
+  public Command pathFindToPose(Pose2d targetPose) {
+    return new DeferredCommand(
+        () -> {
+          return AutoBuilder.pathfindToPose(targetPose, AutoConstants.pathConstraints, 0.0);
+        },
+        Set.of(this));
+  }
+
+  public Command pathFindThroughTrench() {
+    return new DeferredCommand(
+            () -> {
+              // List<PathPlannerPath> allTrenchPaths =
+              //     List.of(
+              //         loadPath("AllianceLToMid"),
+              //         loadPath("AllianceRToMid"),
+              //         loadPath("MidToAllianceL"),
+              //         loadPath("MidToAllianceR"));
+
+              // PathPlannerPath closestTrenchPath = nearestPath(stateCache.Pose, allTrenchPaths);
+
+              Pose2d lMid = AllianceUtil.flipPose(FieldConstants.allianceLMid);
+              Pose2d lSide = AllianceUtil.flipPose(FieldConstants.allianceLSide);
+              Pose2d rMid = AllianceUtil.flipPose(FieldConstants.allianceRMid);
+              Pose2d rSide = AllianceUtil.flipPose(FieldConstants.allianceRSide);
+
+              Map<Pose2d, Pose2d> trenchPairs =
+                  Map.of(
+                      lMid, lSide,
+                      lSide, lMid,
+                      rMid, rSide,
+                      rSide, rMid);
+              Pose2d nearest = stateCache.Pose.nearest(trenchPairs.keySet());
+
+              return AutoBuilder.pathfindToPose(
+                  trenchPairs.get(nearest), AutoConstants.pathConstraints);
+            },
+            Set.of(this))
+        .withName("PathFindThroughTrench");
   }
 
   @Override
   public void periodic() {
-    /*
-     * Periodically try to apply the operator perspective.
-     * If we haven't applied the operator perspective before, then we should apply it regardless of DS state.
-     * This allows us to correct the perspective in case the robot code restarts mid-match.
-     * Otherwise, only check and apply the operator perspective if the DS is disabled.
-     * This ensures driving behavior doesn't change until an explicit disable event occurs during testing.
-     */
+    stateCache = getState();
+
+    latestArducamLeftResult = arducamLeft.getAllUnreadResults();
+    latestArducamRightResult = arducamRight.getAllUnreadResults();
+    latestArducamFrontResult = arducamFront.getAllUnreadResults();
+
+    double stateTimestamp = Utils.currentTimeToFPGATime(stateCache.Timestamp);
+
+    leftPoseEstimator.addHeadingData(stateTimestamp, stateCache.Pose.getRotation());
+    rightPoseEstimator.addHeadingData(stateTimestamp, stateCache.Pose.getRotation());
+    frontPoseEstimator.addHeadingData(stateTimestamp, stateCache.Pose.getRotation());
+
+    if (arducamLeftMatrix.isEmpty()) {
+      arducamLeftMatrix = arducamLeft.getCameraMatrix();
+    }
+    if (arducamLeftDistCoeffs.isEmpty()) {
+      arducamLeftDistCoeffs = arducamLeft.getDistCoeffs();
+    }
+
+    if (arducamRightMatrix.isEmpty()) {
+      arducamRightMatrix = arducamRight.getCameraMatrix();
+    }
+    if (arducamRightDistCoeffs.isEmpty()) {
+      arducamRightDistCoeffs = arducamRight.getDistCoeffs();
+    }
+
+    if (arducamFrontMatrix.isEmpty()) {
+      arducamFrontMatrix = arducamFront.getCameraMatrix();
+    }
+    if (arducamFrontDistCoeffs.isEmpty()) {
+      arducamFrontDistCoeffs = arducamFront.getDistCoeffs();
+    }
+    updateVisionPoseEstimates();
+
+    field.setRobotPose(stateCache.Pose);
+
     if (!m_hasAppliedOperatorPerspective || DriverStation.isDisabled()) {
       DriverStation.getAlliance()
           .ifPresent(
@@ -224,6 +406,23 @@ public class Swerve extends TunerSwerveDrivetrain implements Subsystem {
                 m_hasAppliedOperatorPerspective = true;
               });
     }
+  }
+
+  @Override
+  public void simulationPeriodic() {
+    // Update camera simulation
+    Pose2d robotPose = stateCache.Pose;
+
+    field.getObject("EstimatedRobot").setPose(robotPose);
+
+    visionSim.addFieldObject(
+        "Turret",
+        stateCache.Pose.transformBy(
+            new Transform2d(
+                TurretConstants.robotToTurret.toTranslation2d(),
+                simFaceTowards(AllianceUtil.getHubPose(), stateCache.Pose))));
+
+    visionSim.update(robotPose);
   }
 
   private void startSimThread() {
@@ -286,5 +485,360 @@ public class Swerve extends TunerSwerveDrivetrain implements Subsystem {
   @Override
   public Optional<Pose2d> samplePoseAt(double timestampSeconds) {
     return super.samplePoseAt(Utils.fpgaToCurrentTime(timestampSeconds));
+  }
+
+  private void updateVisionPoses(
+      List<PhotonPipelineResult> latestResults,
+      PhotonPoseEstimator poseEstimator,
+      Optional<Matrix<N3, N3>> cameraMatrix,
+      Optional<Matrix<N8, N1>> distCoeffs,
+      Transform3d cameraTransform,
+      double baseSingleTagStdDev,
+      double baseMultiTagStdDev,
+      double cameraWeight) {
+
+    if (latestResults.isEmpty()) {
+      return;
+    }
+
+    for (PhotonPipelineResult result : latestResults) {
+      Optional<EstimatedRobotPose> optionalVisionPose =
+          poseEstimator.estimateCoprocMultiTagPose(result);
+      if (optionalVisionPose.isEmpty()) {
+        optionalVisionPose = poseEstimator.estimatePnpDistanceTrigSolvePose(result);
+        continue;
+      }
+      if (optionalVisionPose.isEmpty()) {
+        continue;
+      }
+
+      EstimatedRobotPose visionPose = optionalVisionPose.get();
+
+      double totalDistance = 0.0;
+      int tagCount = 0;
+
+      for (PhotonTrackedTarget target : visionPose.targetsUsed) {
+        tagCount++;
+        totalDistance +=
+            target.getBestCameraToTarget().getTranslation().toTranslation2d().getNorm();
+
+        int apriltagID = target.getFiducialId();
+        Optional<Pose3d> tagPose = FieldConstants.aprilTagLayout.getTagPose(apriltagID);
+
+        if (tagPose.isEmpty()) {
+          continue;
+        }
+
+        detectedAprilTags.add(apriltagID);
+        detectedTargets.add(tagPose.get());
+      }
+
+      double averageDistance = totalDistance / tagCount;
+
+      if (tagCount > 1 && visionPose.strategy == PoseStrategy.MULTI_TAG_PNP_ON_COPROCESSOR) {
+        if (!isValidMultitagPose(
+            visionPose.estimatedPose,
+            averageDistance,
+            visionPose.targetsUsed.size(),
+            visionPose.timestampSeconds)) {
+          rejectedPoses.add(visionPose.estimatedPose);
+          continue;
+        }
+        poseEstimates.add(
+            new PoseEstimate(
+                visionPose.estimatedPose,
+                visionPose.timestampSeconds,
+                getVisionStdDevs(
+                    tagCount, averageDistance, baseMultiTagStdDev * (1 / cameraWeight))));
+      } else {
+        if (!isValidSingleTagPose(visionPose.estimatedPose, averageDistance)) {
+          rejectedPoses.add(visionPose.estimatedPose);
+          continue;
+        }
+
+        poseEstimates.add(
+            new PoseEstimate(
+                visionPose.estimatedPose,
+                visionPose.timestampSeconds,
+                getVisionStdDevs(
+                    tagCount, averageDistance, baseSingleTagStdDev * (1 / cameraWeight))));
+      }
+    }
+  }
+
+  private void updateVisionPoseEstimates() {
+    poseEstimates.clear();
+    detectedTargets.clear();
+    rejectedPoses.clear();
+
+    updateVisionPoses(
+        latestArducamLeftResult,
+        leftPoseEstimator,
+        arducamLeftMatrix,
+        arducamLeftDistCoeffs,
+        VisionConstants.arducamLeftTransform,
+        Units.inchesToMeters(3.0),
+        Units.inchesToMeters(2.5),
+        1);
+
+    updateVisionPoses(
+        latestArducamRightResult,
+        rightPoseEstimator,
+        arducamRightMatrix,
+        arducamRightDistCoeffs,
+        VisionConstants.arducamRightTransform,
+        Units.inchesToMeters(3.0),
+        Units.inchesToMeters(2.5),
+        1);
+
+    updateVisionPoses(
+        latestArducamFrontResult,
+        frontPoseEstimator,
+        arducamFrontMatrix,
+        arducamFrontDistCoeffs,
+        VisionConstants.arducamFrontTransform,
+        Units.inchesToMeters(3.0),
+        Units.inchesToMeters(2.5),
+        1);
+
+    Collections.sort(poseEstimates);
+
+    for (PoseEstimate poseEstimate : poseEstimates) {
+      addVisionMeasurement(
+          poseEstimate.estimatedPose().toPose2d(),
+          poseEstimate.timestamp(),
+          poseEstimate.visionStandardDeviation());
+    }
+  }
+
+  private Vector<N3> getVisionStdDevs(
+      int tagCount, double averageDistance, double baseStandardDev) {
+    double stdDevScale = 1 + (averageDistance * averageDistance) / 30;
+
+    return VecBuilder.fill(
+        baseStandardDev * stdDevScale, baseStandardDev * stdDevScale, Double.POSITIVE_INFINITY);
+  }
+
+  private boolean isOutOfBounds(Pose3d visionPose) {
+    final double fieldTolerance = Units.inchesToMeters(2.5);
+
+    return visionPose.getX() < -fieldTolerance
+        || visionPose.getX() > FieldConstants.aprilTagLayout.getFieldLength() + fieldTolerance
+        || visionPose.getY() < -fieldTolerance
+        || visionPose.getY() > FieldConstants.aprilTagLayout.getFieldWidth() + fieldTolerance
+        || visionPose.getZ() < -0.5
+        || visionPose.getZ() > 1.6;
+  }
+
+  private boolean isValidSingleTagPose(Pose3d visionPose, double distance) {
+    if (distance > 4.5) {
+      return false;
+    }
+    // if (DriverStation.isAutonomous()) {
+    //   return false;
+    // }
+
+    if (isOutOfBounds(visionPose)) {
+      return false;
+    }
+
+    return true;
+  }
+
+  private boolean isValidMultitagPose(
+      Pose3d visionPose, double averageDistance, int detectedTargets, double timestampSeconds) {
+    if (averageDistance > 4.5) {
+      return false;
+    }
+    // if (DriverStation.isAutonomous()) {
+    //   return false;
+    // }
+    if (isOutOfBounds(visionPose)) {
+      return false;
+    }
+
+    Optional<Rotation2d> rotationAtTime =
+        samplePoseAt(timestampSeconds).map((pose) -> pose.getRotation());
+
+    if (rotationAtTime.isEmpty()) {
+      return false;
+    }
+
+    Rotation2d angleDifference =
+        rotationAtTime.get().minus(visionPose.getRotation().toRotation2d());
+
+    double angleTolerance = DriverStation.isAutonomous() ? 8.0 : 15.0;
+
+    if (Math.abs(angleDifference.getDegrees()) > angleTolerance) {
+      return false;
+    }
+
+    return true;
+  }
+
+  private void initVisionSim() {
+    visionSim = new ExtendedVisionSystemSim("main");
+
+    visionSim.addAprilTags(FieldConstants.aprilTagLayout);
+
+    Matrix<N3, N3> calibError =
+        new Matrix<>(
+            Nat.N3(),
+            Nat.N3(),
+            new double[] {
+              689.4460449566128,
+              0,
+              441.7426355934763,
+              0,
+              688.5536260717645,
+              292.82342214293885,
+              0,
+              0,
+              1
+            });
+    Vector<N8> distCoefficients =
+        VecBuilder.fill(
+            0.03728225626399143,
+            -0.022115127374557862,
+            0.0001637647682633715,
+            0.0003334141823199474,
+            -0.03915318108680384,
+            -0.0015121698705335032,
+            0.0009546599698249316,
+            0.0016260200999396255);
+
+    SimCameraProperties arducamProperties =
+        new SimCameraProperties()
+            .setCalibration(800, 600, calibError, distCoefficients)
+            .setCalibError(0.21, 0.10)
+            .setFPS(28)
+            .setAvgLatencyMs(36)
+            .setLatencyStdDevMs(15)
+            .setExposureTimeMs(45);
+
+    arducamLeftSim =
+        new PhotonCameraSim(arducamLeft, arducamProperties, FieldConstants.aprilTagLayout);
+    arducamRightSim =
+        new PhotonCameraSim(arducamRight, arducamProperties, FieldConstants.aprilTagLayout);
+    arducamFrontSim =
+        new PhotonCameraSim(arducamFront, arducamProperties, FieldConstants.aprilTagLayout);
+
+    visionSim.addCamera(arducamLeftSim, VisionConstants.arducamLeftTransform);
+    visionSim.addCamera(arducamRightSim, VisionConstants.arducamRightTransform);
+    visionSim.addCamera(arducamFrontSim, VisionConstants.arducamFrontTransform);
+
+    arducamLeftSim.enableRawStream(true);
+    arducamLeftSim.enableProcessedStream(true);
+
+    arducamRightSim.enableRawStream(true);
+    arducamRightSim.enableProcessedStream(true);
+
+    arducamFrontSim.enableRawStream(true);
+    arducamFrontSim.enableProcessedStream(true);
+  }
+
+  public void configureAutoBuilder() {
+    try {
+      RobotConfig config = RobotConfig.fromGUISettings();
+      AutoBuilder.configure(
+          () -> stateCache.Pose,
+          this::resetPose,
+          () -> stateCache.Speeds,
+          (speeds, feedforwards) ->
+              setControl(
+                  pathApplyRobotSpeeds
+                      .withSpeeds(speeds)
+                      .withWheelForceFeedforwardsX(feedforwards.robotRelativeForcesXNewtons())
+                      .withWheelForceFeedforwardsY(feedforwards.robotRelativeForcesYNewtons())),
+          new PPHolonomicDriveController(AutoConstants.translationPID, AutoConstants.rotationPID),
+          config,
+          () -> DriverStation.getAlliance().orElse(Alliance.Blue) == Alliance.Red,
+          this);
+    } catch (Exception ex) {
+      DriverStation.reportError(
+          "Failed to load PathPlanner config and configure AutoBuilder", ex.getStackTrace());
+    }
+    PathPlannerLogging.setLogActivePathCallback(
+        poses -> {
+          field.getObject("Trajectory").setPoses(poses);
+
+          if (poses.isEmpty()) {
+            field.getObject("Target Pose").setPoses();
+            // setControl(
+            //     pathApplyRobotSpeeds
+            //         .withSpeeds(new ChassisSpeeds())
+            //         .withWheelForceFeedforwardsX(new double[] {})
+            //         .withWheelForceFeedforwardsY(new double[] {}));
+          }
+        });
+    PathPlannerLogging.setLogTargetPoseCallback(
+        pose -> field.getObject("Target Pose").setPose(pose));
+
+    SmartDashboard.putData("Swerve/Field", field);
+  }
+
+  private Rotation2d simFaceTowards(Pose2d target, Pose2d robotPose) {
+    Pose2d turretPose =
+        robotPose.transformBy(
+            new Transform2d(TurretConstants.robotToTurret.toTranslation2d(), Rotation2d.kZero));
+
+    Rotation2d turretAngle = target.getTranslation().minus(turretPose.getTranslation()).getAngle();
+    Rotation2d angleToFace = turretAngle.minus(robotPose.getRotation());
+    Angle testAngle = Degrees.of(angleToFace.getDegrees());
+
+    return Rotation2d.fromDegrees(testAngle.in(Degrees));
+  }
+
+  public Pose2d getRobotPose() {
+    return stateCache.Pose;
+  }
+
+  public ChassisSpeeds getChassisSpeeds() {
+    return stateCache.Speeds;
+  }
+
+  @Logged(name = "Rotation")
+  public Rotation2d getRotation() {
+    return getPigeon2().getRotation2d();
+  }
+
+  @Logged(name = "Module States")
+  public SwerveModuleState[] getModuleStates() {
+    return stateCache.ModuleStates;
+  }
+
+  @Logged(name = "Desired States")
+  public SwerveModuleState[] getDesiredStates() {
+    return stateCache.ModuleTargets;
+  }
+
+  private PathPlannerPath loadPath(String pathName) {
+    try {
+      // return PathPlannerPath.fromChoreoTrajectory(pathName);
+      return PathPlannerPath.fromPathFile(pathName);
+    } catch (Exception e) {
+      return null;
+    }
+  }
+
+  public PathPlannerPath nearestPath(Pose2d referencePose, Collection<PathPlannerPath> paths) {
+    return Collections.min(
+        paths,
+        Comparator.comparing(
+                (PathPlannerPath path) ->
+                    referencePose
+                        .getTranslation()
+                        .getDistance(
+                            AllianceUtil.flipPose(path.getStartingHolonomicPose().get())
+                                .getTranslation()))
+            .thenComparing(
+                (PathPlannerPath path) ->
+                    Math.abs(
+                        referencePose
+                            .getRotation()
+                            .minus(
+                                AllianceUtil.flipPose(path.getStartingHolonomicPose().get())
+                                    .getRotation())
+                            .getRadians())));
   }
 }
