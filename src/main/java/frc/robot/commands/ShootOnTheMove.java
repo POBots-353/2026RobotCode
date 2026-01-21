@@ -8,6 +8,7 @@ import static edu.wpi.first.units.Units.Degrees;
 
 import edu.wpi.first.math.filter.Debouncer;
 import edu.wpi.first.math.filter.LinearFilter;
+import edu.wpi.first.math.geometry.Pose2d;
 import edu.wpi.first.math.kinematics.ChassisSpeeds;
 import edu.wpi.first.wpilibj2.command.Command;
 import frc.robot.subsystems.Hood;
@@ -16,6 +17,7 @@ import frc.robot.subsystems.Swerve;
 import frc.robot.subsystems.Turret;
 import frc.robot.util.ShotCalculator;
 import frc.robot.util.ShotCalculator.ShootingParameters;
+import java.util.function.Supplier;
 
 /* You should consider using the more terse Command factories API instead https://docs.wpilib.org/en/stable/docs/software/commandbased/organizing-command-based.html#defining-commands */
 public class ShootOnTheMove extends Command {
@@ -37,11 +39,19 @@ public class ShootOnTheMove extends Command {
 
   private ChassisSpeeds previousSpeeds = new ChassisSpeeds();
 
-  public ShootOnTheMove(Swerve swerve, Turret turret, Hood hood, Shooter shooter) {
+  private Pose2d targetPose;
+
+  public ShootOnTheMove(
+      Swerve swerve,
+      Turret turret,
+      Hood hood,
+      Shooter shooter,
+      Supplier<Pose2d> targetPoseSupplier) {
     this.swerve = swerve;
     this.turret = turret;
     this.hood = hood;
     this.shooter = shooter;
+    this.targetPose = targetPoseSupplier.get();
     addRequirements(hood, turret, shooter);
   }
 
@@ -69,7 +79,7 @@ public class ShootOnTheMove extends Command {
     double fieldAccelY = accelYFilter.calculate(fieldAcceleration.vyMetersPerSecond);
 
     ShootingParameters shootingParameters =
-        ShotCalculator.getParameters(swerve, turret, fieldAccelX, fieldAccelY);
+        ShotCalculator.getParameters(swerve, turret, targetPose, fieldAccelX, fieldAccelY);
 
     turret.setTargetAngle(shootingParameters.turretAngle());
 

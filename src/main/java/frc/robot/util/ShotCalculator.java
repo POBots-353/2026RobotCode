@@ -27,8 +27,8 @@ public class ShotCalculator {
   public record ShootingParameters(double shooterSpeed, Angle turretAngle, Angle hoodAngle) {}
 
   public static ShootingParameters getParameters(
-      Swerve swerve, Turret turret, double fieldAccelX, double fieldAccelY) {
-    Pose2d targetPose = AllianceUtil.getHubPose();
+      Swerve swerve, Turret turret, Pose2d target, double fieldAccelX, double fieldAccelY) {
+    Pose2d targetPose = target;
     Pose2d turretPose = swerve.getRobotPose().transformBy(robotToTurret);
 
     ChassisSpeeds robotVelocity = swerve.getChassisSpeeds();

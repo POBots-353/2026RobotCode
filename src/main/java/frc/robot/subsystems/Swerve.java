@@ -793,6 +793,13 @@ public class Swerve extends TunerSwerveDrivetrain implements Subsystem {
     return stateCache.Pose;
   }
 
+  public void updateFerryPoseDashboard(int ferryPoseIndex) {
+    SmartDashboard.putBoolean("Ferry Target / 0", ferryPoseIndex == 0);
+    SmartDashboard.putBoolean("Ferry Target / 1", ferryPoseIndex == 1);
+    SmartDashboard.putBoolean("Ferry Target / 2", ferryPoseIndex == 2);
+    SmartDashboard.putBoolean("Ferry Target / 3", ferryPoseIndex == 3);
+  }
+
   public ChassisSpeeds getChassisSpeeds() {
     return stateCache.Speeds;
   }

@@ -6,21 +6,27 @@ package frc.robot;
 
 import com.pathplanner.lib.auto.AutoBuilder;
 import edu.wpi.first.epilogue.Logged;
+import edu.wpi.first.math.geometry.Pose2d;
 import edu.wpi.first.wpilibj.smartdashboard.SendableChooser;
 import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 import edu.wpi.first.wpilibj2.command.Command;
+import edu.wpi.first.wpilibj2.command.Commands;
 import edu.wpi.first.wpilibj2.command.button.CommandXboxController;
 import edu.wpi.first.wpilibj2.command.button.Trigger;
 import edu.wpi.first.wpilibj2.command.sysid.SysIdRoutine.Direction;
+import frc.robot.Constants.FieldConstants;
 import frc.robot.Constants.OperatorConstants;
 import frc.robot.Constants.SwerveConstants;
+import frc.robot.commands.ShootOnTheMove;
 import frc.robot.commands.TeleopSwerve;
 import frc.robot.generated.TunerConstants;
 import frc.robot.subsystems.Hood;
+import frc.robot.subsystems.Shooter;
 import frc.robot.subsystems.Swerve;
 import frc.robot.subsystems.Turret;
 import frc.robot.util.AllianceUtil;
 import frc.robot.util.SwerveTelemetry;
+import java.util.function.Supplier;
 
 /**
  * This class is where the bulk of the robot should be declared. Since Command-based is a
@@ -32,8 +38,14 @@ public class RobotContainer {
   // Replace with CommandPS4Controller or CommandJoystick if needed
   private final CommandXboxController driverController =
       new CommandXboxController(OperatorConstants.kDriverControllerPort);
+  private final CommandXboxController operatorController =
+      new CommandXboxController(OperatorConstants.kOperatorControllerPort);
 
   private SendableChooser<Command> autoChooser;
+
+  private int ferryPoseIndex = 0;
+  private final Supplier<Pose2d> ferryPoseSupplier =
+      () -> FieldConstants.blueFerryPoints.get(ferryPoseIndex);
 
   @Logged(name = "Swerve")
   private final Swerve swerve = TunerConstants.createDrivetrain();
@@ -44,19 +56,20 @@ public class RobotContainer {
   @Logged(name = "Hood")
   private final Hood hood = new Hood();
 
+  private final Shooter shooter = new Shooter();
+
   private final SwerveTelemetry swerveTelemetry = new SwerveTelemetry();
 
   /** The container for the robot. Contains subsystems, OI devices, and commands. */
   public RobotContainer() {
     // Configure the trigger bindings
     configureDriverBindings();
+    configureOperatorBindings();
     swerve.configureAutoBuilder();
 
     configureAutoChooser();
 
-    turret.setDefaultCommand(turret.faceTarget(AllianceUtil::getHubPose, swerve::getRobotPose));
-
-    hood.setDefaultCommand(hood.aimForTarget(AllianceUtil::getHubPose, swerve::getRobotPose));
+    swerve.updateFerryPoseDashboard(ferryPoseIndex);
 
     swerve.registerTelemetry(swerveTelemetry::telemeterize);
   }
@@ -86,6 +99,41 @@ public class RobotContainer {
             swerve));
 
     driverController.a().whileTrue(swerve.pathFindThroughTrench());
+  }
+
+  private void configureOperatorBindings() {
+    Trigger ferryMode = operatorController.leftTrigger();
+    turret.setDefaultCommand(turret.faceTarget(AllianceUtil::getHubPose, swerve::getRobotPose));
+
+    hood.setDefaultCommand(hood.aimForTarget(AllianceUtil::getHubPose, swerve::getRobotPose));
+
+    ferryMode.whileTrue(new ShootOnTheMove(swerve, turret, hood, shooter, ferryPoseSupplier));
+
+    operatorController
+        .y()
+        .onTrue(
+            Commands.runOnce(
+                () -> {
+                  ferryPoseIndex = (ferryPoseIndex + 1) % FieldConstants.blueFerryPoints.size();
+                  swerve.updateFerryPoseDashboard(ferryPoseIndex);
+                }));
+    //       operatorController.a().onTrue(
+    //     Commands.runOnce(() -> {
+    //       ferryPoseIndex = 0;
+    //       updateFerryPoseDashboard();
+    //     }));
+
+    // operatorController.b().onTrue(
+    //     Commands.runOnce(() -> {
+    //       ferryPoseIndex = 1;
+    //       updateFerryPoseDashboard();
+    //     }));
+
+    // operatorController.x().onTrue(
+    //     Commands.runOnce(() -> {
+    //       ferryPoseIndex = 2;
+    //       updateFerryPoseDashboard();
+    //     }));
   }
 
   private void configureAutoChooser() {
@@ -125,11 +173,6 @@ public class RobotContainer {
     SmartDashboard.putData("Auto Chooser", autoChooser);
   }
 
-  /**
-   * Use this to pass the autonomous command to the main {@link Robot} class.
-   *
-   * @return the command to run in autonomous
-   */
   public Command getAutonomousCommand() {
     // An example command will be run in autonomous
     return autoChooser.getSelected();
