@@ -41,6 +41,7 @@ import edu.wpi.first.units.measure.Time;
 import edu.wpi.first.wpilibj.Filesystem;
 import java.io.IOException;
 import java.nio.file.Path;
+import java.util.List;
 
 /**
  * The Constants class provides a convenient place for teams to hold robot-wide numerical or boolean
@@ -53,6 +54,7 @@ import java.nio.file.Path;
 public final class Constants {
   public static class OperatorConstants {
     public static final int kDriverControllerPort = 0;
+    public static final int kOperatorControllerPort = 1;
   }
 
   public static class SwerveConstants {
@@ -128,17 +130,24 @@ public final class Constants {
 
     // top of the plastic ring on the hub is 72 inches
     public static final Distance hubHeight = Inches.of(72 - 8);
+
+    public static final List<Pose2d> blueFerryPoints =
+        List.of(
+            new Pose2d(2.0, 7.347899913787842, Rotation2d.kZero),
+            new Pose2d(2.0, 5.476860046386719, Rotation2d.kZero),
+            new Pose2d(2.0, 3.118569850921631, Rotation2d.kZero),
+            new Pose2d(2.0, 1.4229397773742676, Rotation2d.kZero));
   }
 
   public static class TurretConstants {
-    public static final double TURRET_GEAR_TEETH = 210.0;
-    public static final double MOTOR_GEAR_TEETH = 30.0;
-    public static final double INTERNAL_MOTOR_RATIO = 9.0; // Kraken internal
+
+    public static final double gearOneTeeth = 48;
+    public static final double gearTwoTeeth = 49;
+    public static final double turretTeeth = 85;
 
     public static final Angle tolerance = Degrees.of(20);
 
-    public static final double TOTAL_GEAR_RATIO =
-        (TURRET_GEAR_TEETH / MOTOR_GEAR_TEETH) * INTERNAL_MOTOR_RATIO;
+    public static final double totalGearRatio = (gearOneTeeth / 10) * (turretTeeth / 10);
 
     public static final Angle MIN_ANGLE = Degrees.of(-540.0);
     public static final Angle MAX_ANGLE = Degrees.of(540.0);
@@ -160,7 +169,7 @@ public final class Constants {
             .withStaticFeedforwardSign(StaticFeedforwardSignValue.UseVelocitySign);
 
     public static final FeedbackConfigs feedbackConfigs =
-        new FeedbackConfigs().withSensorToMechanismRatio(TOTAL_GEAR_RATIO);
+        new FeedbackConfigs().withSensorToMechanismRatio(totalGearRatio);
 
     public static final MotorOutputConfigs motorOutputConfigs =
         new MotorOutputConfigs()

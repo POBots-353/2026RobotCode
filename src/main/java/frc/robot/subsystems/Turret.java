@@ -30,13 +30,17 @@ import frc.robot.Constants.TurretConstants;
 import java.util.function.Supplier;
 
 public class Turret extends SubsystemBase {
-  private final double motorGearTeeth = 30.0;
-  private final double secondaryGearTeeth = 32.0;
-  private final double turretGearTeeth = 210.0;
 
-  private final double kEncoderGearing = motorGearTeeth / secondaryGearTeeth; // 30/32 = 0.9375
+  private final double gearOneTeeth = TurretConstants.gearOneTeeth;
+  private final double gearTwoTeeth = TurretConstants.gearTwoTeeth;
+  private final double turretTeeth = TurretConstants.turretTeeth;
 
-  private final double kTurretReduction = turretGearTeeth / motorGearTeeth; // 210/30 = 7
+  private final double encoderARatio = 10 / gearOneTeeth;
+  private final double encoderBRatio = 10 / gearTwoTeeth;
+
+  private final double encoderGearing = encoderBRatio / encoderARatio;
+
+  private final double turretReduction = (turretTeeth / 10) / (10 / gearOneTeeth);
 
   private CANcoder encoderA;
   private CANcoder encoderB;
@@ -134,17 +138,17 @@ public class Turret extends SubsystemBase {
     double eA = encoderA.getAbsolutePosition().getValue().in(Rotations);
     double eB = encoderB.getAbsolutePosition().getValue().in(Rotations);
 
-    double predicted32 = eA * kEncoderGearing;
+    double predictedB = eA * (encoderGearing);
 
-    double diff = eB - predicted32;
+    double diff = eB - predictedB;
 
     diff = MathUtil.inputModulus(diff, -0.5, 0.5);
 
-    long fullRotations = Math.round(diff / (kEncoderGearing - 1));
+    long fullRotations = Math.round(diff / (encoderGearing - 1));
 
-    double motorRotations = eA + fullRotations;
+    double motorRotations = (eA / encoderARatio) + fullRotations;
 
-    double turretRotations = motorRotations / kTurretReduction;
+    double turretRotations = motorRotations / turretReduction;
 
     return Degrees.of(turretRotations * 360);
   }
