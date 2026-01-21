@@ -8,6 +8,8 @@ import com.ctre.phoenix6.configs.TalonFXConfiguration;
 import com.ctre.phoenix6.hardware.TalonFX;
 
 import au.grapplerobotics.LaserCan;
+import edu.wpi.first.math.filter.Debouncer;
+import edu.wpi.first.math.filter.Debouncer.DebounceType;
 import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
 import frc.robot.Constants.SpindexerConstants;
@@ -15,12 +17,14 @@ import frc.robot.Constants.SpindexerConstants;
 public class Spindexer extends SubsystemBase {
   private TalonFX SpindexerMotor;
   private LaserCan SpindexerLaser;
+  private Debouncer SpindexDebouncer;
 
 
   /** Creates a new Spindexer. */
   public Spindexer() {
     SpindexerMotor = new TalonFX(SpindexerConstants.SpindexerMotorID);
     SpindexerLaser = new LaserCan(SpindexerConstants.SpindexerLaserID);
+    SpindexDebouncer = new Debouncer(1.5);
 
     TalonFXConfiguration spindexerConfig = new TalonFXConfiguration();
     spindexerConfig.Slot0.kP = 0.0;
@@ -68,10 +72,12 @@ public class Spindexer extends SubsystemBase {
   // empty means laser can cant see anything anymore
   // look up debouncer
 
-
+  public Command runUntilEmptyCommand(){
+    return (runSpindexer()) .until(()-> SpindexDebouncer.calculate(!beamBroken()));
+  }
   
   
-  public boolean SpindexerLaser(){
+  public boolean beamBroken(){
     LaserCan.Measurement measurement = SpindexerLaser.getMeasurement();
 
     if (measurement != null && measurement.status == LaserCan.LASERCAN_STATUS_VALID_MEASUREMENT){
