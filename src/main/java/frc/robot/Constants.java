@@ -11,6 +11,9 @@ import static edu.wpi.first.units.Units.RotationsPerSecond;
 import static edu.wpi.first.units.Units.RotationsPerSecondPerSecond;
 import static edu.wpi.first.units.Units.Seconds;
 
+import java.io.IOException;
+import java.nio.file.Path;
+
 import com.ctre.phoenix6.configs.CurrentLimitsConfigs;
 import com.ctre.phoenix6.configs.FeedbackConfigs;
 import com.ctre.phoenix6.configs.MotionMagicConfigs;
@@ -23,6 +26,7 @@ import com.ctre.phoenix6.signals.NeutralModeValue;
 import com.ctre.phoenix6.signals.StaticFeedforwardSignValue;
 import com.pathplanner.lib.config.PIDConstants;
 import com.pathplanner.lib.path.PathConstraints;
+
 import edu.wpi.first.apriltag.AprilTagFieldLayout;
 import edu.wpi.first.math.geometry.Pose2d;
 import edu.wpi.first.math.geometry.Rotation2d;
@@ -42,6 +46,7 @@ import edu.wpi.first.wpilibj.Filesystem;
 import java.io.IOException;
 import java.nio.file.Path;
 import java.util.List;
+
 
 /**
  * The Constants class provides a convenient place for teams to hold robot-wide numerical or boolean
@@ -69,6 +74,26 @@ public final class Constants {
         maxTranslationalSpeed.div(translationZeroToFull);
     public static final AngularAcceleration maxAngularAcceleration =
         maxRotationalSpeed.div(rotationZeroToFull);
+  }
+
+
+  public static class intakeConstants{
+    public static final int armID = 1;
+    public static final int wheelID = 2;
+    public static final int beamID = 3;
+    public static final int joystickID = 4;
+    public static final double voltagePreset = 0;
+/*Gear value TBD || All values random */    
+    public static final double gearRatio = 5.0;  
+    public static final double roationUp = 10; 
+    public static final double rotationDown = 0;
+
+    public static final double speedUp= roationUp * gearRatio;
+    public static final double speedDown= rotationDown * gearRatio; /*gonna be 0 anyway */
+    public static final double slowUp = (rotationDown * gearRatio) / 2;
+
+    public static final double upPosition = 0;
+    public static final double downPosition = 5;
   }
 
   public static class VisionConstants {
@@ -277,5 +302,13 @@ public final class Constants {
       hoodAngleMap.put(3.0, 4.0);
       hoodAngleMap.put(3.53, 5.0); // random values (Distance, ROTATIONS)
     }
+  }
+
+  public static class SpindexerConstants {
+
+    public static final int SpindexerMotorID = 0;
+    public static final int SpindexerLaserID = 0;
+    public static final double SpindexerMotorSpeed = 0.5;
+    public static final double SpindexerDistance = 100;
   }
 }
