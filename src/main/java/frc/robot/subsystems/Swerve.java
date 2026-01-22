@@ -110,9 +110,12 @@ public class Swerve extends TunerSwerveDrivetrain implements Subsystem {
   private Timer timer = new Timer();
 
   private Pigeon2 gyro = new Pigeon2(SwerveConstants.pigeonID);
+  private double targetFuelYaw = 0;
+    public Rotation2d desiredFuelRotation = Rotation2d.k180deg;
 
   private PhotonCamera arducamLeft = new PhotonCamera(VisionConstants.arducamLeftName);
   private PhotonCamera arducamFront = new PhotonCamera(VisionConstants.arducamFrontName);
+  private PhotonCamera arducamFuel = new PhotonCamera(VisionConstants.arducamFuelName);
   private PhotonCamera arducamRight = new PhotonCamera(VisionConstants.arducamRightName);
 
   private PhotonPoseEstimator leftPoseEstimator =
@@ -127,6 +130,7 @@ public class Swerve extends TunerSwerveDrivetrain implements Subsystem {
   private List<PhotonPipelineResult> latestArducamLeftResult;
   private List<PhotonPipelineResult> latestArducamRightResult;
   private List<PhotonPipelineResult> latestArducamFrontResult;
+  private List<PhotonPipelineResult> latestArducamFuelResult;
 
   private Optional<Matrix<N3, N3>> arducamLeftMatrix = Optional.empty();
   private Optional<Matrix<N8, N1>> arducamLeftDistCoeffs = Optional.empty();
@@ -137,13 +141,17 @@ public class Swerve extends TunerSwerveDrivetrain implements Subsystem {
   private Optional<Matrix<N3, N3>> arducamFrontMatrix = Optional.empty();
   private Optional<Matrix<N8, N1>> arducamFrontDistCoeffs = Optional.empty();
 
-  private SwerveDriveState stateCache = getState();
+  private Optional<Matrix<N3, N3>> arducamFuelMatrix = Optional.empty();
+  private Optional<Matrix<N8, N1>> arducamFuelDistCoeffs = Optional.empty();
+
+  public SwerveDriveState stateCache = getState();
 
   private ExtendedVisionSystemSim visionSim;
 
   private PhotonCameraSim arducamLeftSim;
   private PhotonCameraSim arducamRightSim;
   private PhotonCameraSim arducamFrontSim;
+  private PhotonCameraSim arducamFuelSim;
 
   @Logged(name = "Detected Targets")
   private List<Pose3d> detectedTargets = new ArrayList<>();
@@ -342,25 +350,18 @@ public class Swerve extends TunerSwerveDrivetrain implements Subsystem {
 
   public Command driveOverBump(String direction) {
     return Commands.runOnce(timer::restart)
-    .andThen(
-        Commands.run(() -> {
-          if (direction == "To Middle") {
-            this.setControl(
-                fieldOriented
-                    .withVelocityX(0.1)
-                    .withVelocityY(0)
-                    .withRotationalRate(0));
-          } else {
-            this.setControl(
-                fieldOriented
-                    .withVelocityX(-0.1)
-                    .withVelocityY(0)
-                    .withRotationalRate(0));
-          }
-        })).until(() ->
-            timer.hasElapsed(0.5)
-            && gyro.getPitch().getValueAsDouble() == 0
-        );
+        .andThen(
+            Commands.run(
+                () -> {
+                  if (direction == "To Middle") {
+                    this.setControl(
+                        fieldOriented.withVelocityX(0.1).withVelocityY(0).withRotationalRate(0));
+                  } else {
+                    this.setControl(
+                        fieldOriented.withVelocityX(-0.1).withVelocityY(0).withRotationalRate(0));
+                  }
+                }))
+        .until(() -> timer.hasElapsed(0.5) && gyro.getPitch().getValueAsDouble() == 0);
   }
 
   public Command pathFindThroughTrench() {
@@ -402,6 +403,7 @@ public class Swerve extends TunerSwerveDrivetrain implements Subsystem {
     latestArducamLeftResult = arducamLeft.getAllUnreadResults();
     latestArducamRightResult = arducamRight.getAllUnreadResults();
     latestArducamFrontResult = arducamFront.getAllUnreadResults();
+    latestArducamFuelResult = arducamFuel.getAllUnreadResults();
 
     double stateTimestamp = Utils.currentTimeToFPGATime(stateCache.Timestamp);
 
@@ -429,7 +431,16 @@ public class Swerve extends TunerSwerveDrivetrain implements Subsystem {
     if (arducamFrontDistCoeffs.isEmpty()) {
       arducamFrontDistCoeffs = arducamFront.getDistCoeffs();
     }
+
+    if (arducamFuelMatrix.isEmpty()) {
+      arducamFuelMatrix = arducamFuel.getCameraMatrix();
+    }
+    if (arducamFuelDistCoeffs.isEmpty()) {
+      arducamFuelDistCoeffs = arducamFuel.getDistCoeffs();
+    }
+
     updateVisionPoseEstimates();
+    updateFuelRotation();
 
     field.setRobotPose(stateCache.Pose);
 
@@ -712,6 +723,25 @@ public class Swerve extends TunerSwerveDrivetrain implements Subsystem {
     }
 
     return true;
+  }
+
+  public void updateFuelRotation() {
+    double currentRotation = stateCache.Pose.getRotation().getDegrees();
+    if (latestArducamFuelResult == null || latestArducamFuelResult.isEmpty()) {
+      return;
+    }
+    PhotonPipelineResult newestResult =
+        latestArducamFuelResult.get(latestArducamFuelResult.size() - 1);
+
+    if (!newestResult.hasTargets()) {
+      return;
+    }
+
+    PhotonTrackedTarget target = newestResult.getBestTarget();
+
+    targetFuelYaw = target.getYaw();
+
+    desiredFuelRotation = Rotation2d.fromDegrees(currentRotation - targetFuelYaw);
   }
 
   private void initVisionSim() {
