@@ -4,10 +4,13 @@ import static edu.wpi.first.units.Units.*;
 
 import com.ctre.phoenix6.SignalLogger;
 import com.ctre.phoenix6.Utils;
+import com.ctre.phoenix6.hardware.Pigeon2;
 import com.ctre.phoenix6.swerve.SwerveDrivetrainConstants;
 import com.ctre.phoenix6.swerve.SwerveModule.DriveRequestType;
+import com.ctre.phoenix6.swerve.SwerveModule.SteerRequestType;
 import com.ctre.phoenix6.swerve.SwerveModuleConstants;
 import com.ctre.phoenix6.swerve.SwerveRequest;
+import com.ctre.phoenix6.swerve.SwerveRequest.ForwardPerspectiveValue;
 import com.pathplanner.lib.auto.AutoBuilder;
 import com.pathplanner.lib.config.RobotConfig;
 import com.pathplanner.lib.controllers.PPHolonomicDriveController;
@@ -34,14 +37,17 @@ import edu.wpi.first.wpilibj.DriverStation;
 import edu.wpi.first.wpilibj.DriverStation.Alliance;
 import edu.wpi.first.wpilibj.Notifier;
 import edu.wpi.first.wpilibj.RobotController;
+import edu.wpi.first.wpilibj.Timer;
 import edu.wpi.first.wpilibj.smartdashboard.Field2d;
 import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 import edu.wpi.first.wpilibj2.command.Command;
+import edu.wpi.first.wpilibj2.command.Commands;
 import edu.wpi.first.wpilibj2.command.DeferredCommand;
 import edu.wpi.first.wpilibj2.command.Subsystem;
 import edu.wpi.first.wpilibj2.command.sysid.SysIdRoutine;
 import frc.robot.Constants.AutoConstants;
 import frc.robot.Constants.FieldConstants;
+import frc.robot.Constants.SwerveConstants;
 import frc.robot.Constants.TurretConstants;
 import frc.robot.Constants.VisionConstants;
 import frc.robot.generated.TunerConstants.TunerSwerveDrivetrain;
@@ -95,6 +101,15 @@ public class Swerve extends TunerSwerveDrivetrain implements Subsystem {
       new SwerveRequest.ApplyRobotSpeeds().withDriveRequestType(DriveRequestType.Velocity);
 
   private Field2d field = new Field2d();
+
+  private SwerveRequest.FieldCentric fieldOriented =
+      new SwerveRequest.FieldCentric()
+          .withForwardPerspective(ForwardPerspectiveValue.OperatorPerspective)
+          .withSteerRequestType(SteerRequestType.Position);
+
+  private Timer timer = new Timer();
+
+  private Pigeon2 gyro = new Pigeon2(SwerveConstants.pigeonID);
 
   private PhotonCamera arducamLeft = new PhotonCamera(VisionConstants.arducamLeftName);
   private PhotonCamera arducamFront = new PhotonCamera(VisionConstants.arducamFrontName);
@@ -323,6 +338,29 @@ public class Swerve extends TunerSwerveDrivetrain implements Subsystem {
           return AutoBuilder.pathfindToPose(targetPose, AutoConstants.pathConstraints, 0.0);
         },
         Set.of(this));
+  }
+
+  public Command driveOverBump(String direction) {
+    return Commands.runOnce(timer::restart)
+    .andThen(
+        Commands.run(() -> {
+          if (direction == "To Middle") {
+            this.setControl(
+                fieldOriented
+                    .withVelocityX(0.1)
+                    .withVelocityY(0)
+                    .withRotationalRate(0));
+          } else {
+            this.setControl(
+                fieldOriented
+                    .withVelocityX(-0.1)
+                    .withVelocityY(0)
+                    .withRotationalRate(0));
+          }
+        })).until(() ->
+            timer.hasElapsed(0.5)
+            && gyro.getPitch().getValueAsDouble() == 0
+        );
   }
 
   public Command pathFindThroughTrench() {
