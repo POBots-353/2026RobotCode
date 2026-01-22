@@ -5,6 +5,8 @@
 package frc.robot;
 
 import com.pathplanner.lib.auto.AutoBuilder;
+import com.pathplanner.lib.auto.NamedCommands;
+
 import edu.wpi.first.epilogue.Logged;
 import edu.wpi.first.wpilibj.smartdashboard.SendableChooser;
 import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
@@ -48,6 +50,8 @@ public class RobotContainer {
 
   /** The container for the robot. Contains subsystems, OI devices, and commands. */
   public RobotContainer() {
+    NamedCommands.registerCommand("Drive Over Bump To Middle", swerve.driveOverBump("To Middle"));
+    NamedCommands.registerCommand("Drive Over Bump To Alliance", swerve.driveOverBump("To Alliance"));
     // Configure the trigger bindings
     configureDriverBindings();
     swerve.configureAutoBuilder();
