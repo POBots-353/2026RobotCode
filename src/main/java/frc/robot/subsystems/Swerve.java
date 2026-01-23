@@ -111,7 +111,7 @@ public class Swerve extends TunerSwerveDrivetrain implements Subsystem {
 
   private Pigeon2 gyro = new Pigeon2(SwerveConstants.pigeonID);
   private double targetFuelYaw = 0;
-    public Rotation2d desiredFuelRotation = Rotation2d.k180deg;
+  public Rotation2d desiredFuelRotation = Rotation2d.k180deg;
 
   private PhotonCamera arducamLeft = new PhotonCamera(VisionConstants.arducamLeftName);
   private PhotonCamera arducamFront = new PhotonCamera(VisionConstants.arducamFrontName);

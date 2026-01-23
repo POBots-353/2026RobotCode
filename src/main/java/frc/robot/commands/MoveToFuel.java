@@ -7,7 +7,6 @@ package frc.robot.commands;
 import static edu.wpi.first.units.Units.MetersPerSecondPerSecond;
 
 import com.ctre.phoenix6.swerve.SwerveRequest;
-
 import edu.wpi.first.math.controller.PIDController;
 import edu.wpi.first.math.filter.SlewRateLimiter;
 import edu.wpi.first.math.geometry.Rotation2d;
@@ -46,15 +45,15 @@ public class MoveToFuel extends Command {
 
   // Called when the command is initially scheduled.
   @Override
-  public void initialize() {
-    
-  }
+  public void initialize() {}
 
   // Called every time the scheduler runs while the command is scheduled.
   @Override
   public void execute() {
     updateDesiredRotation();
-    double turningSpeed = turnToAlgaeController.calculate(swerve.stateCache.Pose.getRotation().getRadians(), desiredRotation.getRadians());
+    double turningSpeed =
+        turnToAlgaeController.calculate(
+            swerve.stateCache.Pose.getRotation().getRadians(), desiredRotation.getRadians());
     double strafeSpeed = 0.2;
     double forwardSpeed = 0.5;
 
@@ -65,7 +64,11 @@ public class MoveToFuel extends Command {
       strafeSpeed = 0;
     }
 
-    swerve.setControl(robotOriented.withVelocityX(forwardSpeed).withVelocityY(strafeSpeed).withRotationalRate(turningSpeed));
+    swerve.setControl(
+        robotOriented
+            .withVelocityX(forwardSpeed)
+            .withVelocityY(strafeSpeed)
+            .withRotationalRate(turningSpeed));
   }
 
   // Called once the command ends or is interrupted.

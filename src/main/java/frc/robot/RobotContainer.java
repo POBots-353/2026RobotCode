@@ -68,13 +68,15 @@ public class RobotContainer {
     NamedCommands.registerCommand(
         "Drive Over Bump To Alliance", swerve.driveOverBump("To Alliance"));
     NamedCommands.registerCommand("Move To Fuel", new MoveToFuel(swerve).withTimeout(2));
-    NamedCommands.registerCommand("Shoot On The Move", new ShootOnTheMove(swerve, turret, hood, shooter, ferryPoseSupplier));
+    NamedCommands.registerCommand(
+        "Shoot On The Move", new ShootOnTheMove(swerve, turret, hood, shooter, ferryPoseSupplier));
 
-    NamedCommands.registerCommand("Pathfind to Mid-Left Bumper", swerve.pathFindToPose(FieldConstants.midLBumperPose));
-    NamedCommands.registerCommand("Pathfind to Mid-Right Bumper", swerve.pathFindToPose(FieldConstants.midRBumperPose));
+    NamedCommands.registerCommand(
+        "Pathfind to Mid-Left Bumper", swerve.pathFindToPose(FieldConstants.midLBumperPose));
+    NamedCommands.registerCommand(
+        "Pathfind to Mid-Right Bumper", swerve.pathFindToPose(FieldConstants.midRBumperPose));
 
     NamedCommands.registerCommand("Shoot", Commands.run(() -> shooter.setSpeed(1)).withTimeout(1));
-
 
     // Configure the trigger bindings
     configureDriverBindings();

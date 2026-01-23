@@ -74,6 +74,13 @@ public final class Constants {
 
     public static final double headingP = 0.0;
     public static final double headingD = 0.0;
+
+    public static final double steerKP = 100.0;
+    public static final double steerKI = 0.0;
+    public static final double steerKD = 0.5;
+    public static final double steerKS = 0.1;
+    public static final double steerKV = 1.91;
+    public static final double steerKA = 0.0;
   }
 
   public static class intakeConstants {
@@ -161,8 +168,10 @@ public final class Constants {
     public static final Pose2d allianceLSide = new Pose2d(3.2353, 7.43, Rotation2d.kZero);
     public static final Pose2d allianceRMid = new Pose2d(6, 0.65, Rotation2d.kZero);
     public static final Pose2d allianceRSide = new Pose2d(3.2353, 0.65, Rotation2d.kZero);
-    public static final Pose2d midRBumperPose = new Pose2d(5.600369930267334, 2.43641996383667, Rotation2d.kZero);       
-    public static final Pose2d midLBumperPose = new Pose2d(5.6198601722717285, 5.5177741050720215, Rotation2d.kZero);
+    public static final Pose2d midRBumperPose =
+        new Pose2d(5.600369930267334, 2.43641996383667, Rotation2d.kZero);
+    public static final Pose2d midLBumperPose =
+        new Pose2d(5.6198601722717285, 5.5177741050720215, Rotation2d.kZero);
 
     // top of the plastic ring on the hub is 72 inches
     public static final Distance hubHeight = Inches.of(72 - 8);
