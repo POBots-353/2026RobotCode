@@ -36,6 +36,8 @@ public class SwerveTelemetry {
   private final DoublePublisher driveOdometryFrequency =
       driveStateTable.getDoubleTopic("OdometryFrequency").publish();
 
+  private final double[] m_poseArray = new double[3];
+
   /** Accept the swerve drive state and telemeterize it to SmartDashboard and SignalLogger. */
   public void telemeterize(SwerveDriveState state) {
     /* Telemeterize the swerve drive state */
@@ -47,7 +49,11 @@ public class SwerveTelemetry {
     driveTimestamp.set(state.Timestamp);
     driveOdometryFrequency.set(1.0 / state.OdometryPeriod);
 
-    SignalLogger.writeStruct("DriveState/Pose", Pose2d.struct, state.Pose);
+    m_poseArray[0] = state.Pose.getX();
+    m_poseArray[1] = state.Pose.getY();
+    m_poseArray[2] = state.Pose.getRotation().getDegrees();
+
+    SignalLogger.writeDoubleArray("DriveState/Pose", m_poseArray);
     SignalLogger.writeStructArray(
         "DriveState/ModuleStates", SwerveModuleState.struct, state.ModuleStates);
     SignalLogger.writeStructArray(

@@ -1,0 +1,32 @@
+{
+  "name": "Bubbles",
+  "disableSimplification": true,
+  "rotations": [
+{"axis": "x", "degrees": 90},
+{"axis": "z", "degrees": 90}
+],
+  "position": [0.0205, 0, 0],
+  "cameras": [ ],
+  "components": [
+    
+
+  {
+"zeroedRotations": [
+  {"axis": "x", "degrees": 90},
+{"axis": "z", "degrees": 90}
+],
+"zeroedPosition": [0.153,0.15248,-0.376]
+
+
+},{
+
+
+"zeroedRotations": [
+  {"axis": "x", "degrees": 90},
+  {"axis": "z", "degrees" : 90}
+],
+"zeroedPosition": [0.051,0.156,-0.448]
+}
+
+]
+}

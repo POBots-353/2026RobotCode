@@ -15,14 +15,21 @@ import com.ctre.phoenix6.controls.MotionMagicVoltage;
 import com.ctre.phoenix6.hardware.CANcoder;
 import com.ctre.phoenix6.hardware.TalonFX;
 import com.ctre.phoenix6.signals.SensorDirectionValue;
+import com.ctre.phoenix6.sim.TalonFXSimState;
 import edu.wpi.first.epilogue.Logged;
 import edu.wpi.first.math.MathUtil;
 import edu.wpi.first.math.geometry.Pose2d;
+import edu.wpi.first.math.geometry.Pose3d;
 import edu.wpi.first.math.geometry.Rotation2d;
+import edu.wpi.first.math.geometry.Rotation3d;
 import edu.wpi.first.math.geometry.Transform2d;
 import edu.wpi.first.math.geometry.Translation2d;
+import edu.wpi.first.math.system.plant.DCMotor;
 import edu.wpi.first.math.util.Units;
 import edu.wpi.first.units.measure.Angle;
+import edu.wpi.first.wpilibj.RobotController;
+import edu.wpi.first.wpilibj.Timer;
+import edu.wpi.first.wpilibj.simulation.SingleJointedArmSim;
 import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
@@ -51,6 +58,8 @@ public class Turret extends SubsystemBase {
 
   private final MotionMagicVoltage motionMagicRequest = new MotionMagicVoltage(0);
 
+  private final SingleJointedArmSim turretSim;
+
   public Turret() {
     encoderA = new CANcoder(TurretConstants.encoderAID);
     encoderB = new CANcoder(TurretConstants.encoderBID);
@@ -76,6 +85,19 @@ public class Turret extends SubsystemBase {
 
     turretMotor.setPosition(getAbsoluteTurretPosition().in(Rotations));
     turretPosition = turretMotor.getPosition();
+
+    turretSim =
+        new SingleJointedArmSim(
+            DCMotor.getKrakenX60(1),
+            TurretConstants.totalGearRatio,
+            0.001,
+            0.1,
+            TurretConstants.MIN_ANGLE.in(Radians),
+            TurretConstants.MAX_ANGLE.in(Radians),
+            false,
+            0,
+            0.0,
+            0.0);
   }
 
   // public void faceTowards(Pose2d target, Pose2d robotPose) {
@@ -195,6 +217,18 @@ public class Turret extends SubsystemBase {
     return runOnce(() -> turretMotor.stopMotor()).withName("Stop Turret");
   }
 
+  public void moveTurret(Double speed) {
+    turretMotor.set(speed);
+  }
+
+  public Command spinOne() {
+    return run(() -> turretMotor.setControl(motionMagicRequest.withPosition(1)));
+  }
+
+  public Command spinZero() {
+    return run(() -> turretMotor.setControl(motionMagicRequest.withPosition(0)));
+  }
+
   public boolean hasDriftedTooMuch(Angle tolerance) {
     Angle motorAngle = turretPosition.getValue();
     Angle absAngle = encoderA.getAbsolutePosition().getValue();
@@ -203,11 +237,51 @@ public class Turret extends SubsystemBase {
     return Math.abs(Units.radiansToDegrees(errorRad)) > tolerance.in(Degrees);
   }
 
+  @Logged(name = "3D Pose Turret")
+  public Pose3d getTurretPose3d() {
+    return new Pose3d(
+        -.1523 + 0.0205,
+        -.15248,
+        .376,
+        new Rotation3d(0, 0, turretPosition.getValue().in(Radians)));
+  }
+
+  @Logged(name = "put Hood Angle")
+  public Pose3d getHoodPose3d() {
+    return new Pose3d(
+        -0.051,
+        -0.156,
+        0.448,
+        new Rotation3d(
+            0, 3 * Math.sin(Timer.getFPGATimestamp()), turretPosition.getValue().in(Radians)));
+  }
+
+  @Logged(name = "Zeroed Poses Turret")
+  public Pose3d[] zeroedComponentPoses() {
+    return new Pose3d[] {new Pose3d(), new Pose3d()};
+  }
+
   @Override
   public void periodic() {
     turretPosition.refresh();
     SmartDashboard.putNumber("TwoEncoder Angle", getAbsoluteTurretPosition().in(Degrees));
     SmartDashboard.putNumber("Turret Angle", turretPosition.getValue().in(Degrees));
     SmartDashboard.putBoolean("Drifted too much", hasDriftedTooMuch(Degrees.of(5)));
+  }
+
+  @Override
+  public void simulationPeriodic() {
+    TalonFXSimState turretSimState = turretMotor.getSimState();
+    turretSimState.setSupplyVoltage(RobotController.getBatteryVoltage());
+
+    turretSim.setInputVoltage(turretSimState.getMotorVoltage());
+
+    turretSim.update(0.020);
+
+    turretSimState.setRawRotorPosition(
+        (turretSim.getAngleRads() / (2 * Math.PI)) * TurretConstants.totalGearRatio);
+
+    turretSimState.setRotorVelocity(
+        (turretSim.getVelocityRadPerSec() / (2 * Math.PI)) * TurretConstants.totalGearRatio);
   }
 }
