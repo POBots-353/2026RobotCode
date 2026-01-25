@@ -13,6 +13,7 @@ public class Shooter extends SubsystemBase {
   private TalonFX shooterMotor = new TalonFX(75);
 
   private double speed;
+
   private final MotionMagicVelocityVoltage shooterVelocity = new MotionMagicVelocityVoltage(0);
 
   public Shooter() {

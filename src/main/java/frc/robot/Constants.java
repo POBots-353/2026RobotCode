@@ -58,6 +58,8 @@ public final class Constants {
   }
 
   public static class SwerveConstants {
+    public static final int pigeonID = 20;
+
     public static final LinearVelocity maxTranslationalSpeed = FeetPerSecond.of(15);
     public static final LinearVelocity slowModeMaxTranslationalSpeed = FeetPerSecond.of(5);
     public static final AngularVelocity maxRotationalSpeed = RotationsPerSecond.of(1.5);
@@ -69,6 +71,17 @@ public final class Constants {
         maxTranslationalSpeed.div(translationZeroToFull);
     public static final AngularAcceleration maxAngularAcceleration =
         maxRotationalSpeed.div(rotationZeroToFull);
+
+
+    public static final double headingP = 0.0;
+    public static final double headingD = 0.0;
+
+    public static final double steerKP = 100.0;
+    public static final double steerKI = 0.0;
+    public static final double steerKD = 0.5;
+    public static final double steerKS = 0.1;
+    public static final double steerKV = 1.91;
+    public static final double steerKA = 0.0;
   }
 
   public static class intakeConstants {
@@ -76,6 +89,7 @@ public final class Constants {
     public static final int wheelID = 16;
     public static final int beamID = 17;
     public static final int joystickID = 18;
+
     public static final double voltagePreset = 0;
     /*Gear value TBD || All values random */
     public static final double gearRatio = 5.0;
@@ -119,6 +133,16 @@ public final class Constants {
             Units.inchesToMeters(-1),
             Units.inchesToMeters(10.07),
             new Rotation3d(0, Units.degreesToRadians(-15), Units.degreesToRadians(0))); // Pitch: 65
+
+    public static final String arducamFuelName = "Arducam_Fuel";
+
+    // TODO: Update this transform
+    public static final Transform3d arducamFuelTransform =
+        new Transform3d(
+            Units.inchesToMeters(0),
+            Units.inchesToMeters(0),
+            Units.inchesToMeters(0),
+            new Rotation3d(0, Units.degreesToRadians(0), Units.degreesToRadians(0)));
   }
 
   public static class FieldConstants {
@@ -146,6 +170,10 @@ public final class Constants {
     public static final Pose2d allianceLSide = new Pose2d(3.2353, 7.43, Rotation2d.kZero);
     public static final Pose2d allianceRMid = new Pose2d(6, 0.65, Rotation2d.kZero);
     public static final Pose2d allianceRSide = new Pose2d(3.2353, 0.65, Rotation2d.kZero);
+    public static final Pose2d midRBumperPose =
+        new Pose2d(5.600369930267334, 2.43641996383667, Rotation2d.kZero);
+    public static final Pose2d midLBumperPose =
+        new Pose2d(5.6198601722717285, 5.5177741050720215, Rotation2d.kZero);
 
     // top of the plastic ring on the hub is 72 inches
     public static final Distance hubHeight = Inches.of(72 - 8);

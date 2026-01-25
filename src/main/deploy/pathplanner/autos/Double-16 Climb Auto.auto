@@ -1,0 +1,86 @@
+{
+  "version": "2025.0",
+  "command": {
+    "type": "sequential",
+    "data": {
+      "commands": [
+        {
+          "type": "named",
+          "data": {
+            "name": "Drive Over Bump To Middle"
+          }
+        },
+        {
+          "type": "named",
+          "data": {
+            "name": "Move To Fuel"
+          }
+        },
+        {
+          "type": "named",
+          "data": {
+            "name": "Pathfind to Mid-Right Bumper"
+          }
+        },
+        {
+          "type": "named",
+          "data": {
+            "name": "Drive Over Bump To Alliance"
+          }
+        },
+        {
+          "type": "named",
+          "data": {
+            "name": "Shoot"
+          }
+        },
+        {
+          "type": "named",
+          "data": {
+            "name": "Drive Over Bump To Middle"
+          }
+        },
+        {
+          "type": "named",
+          "data": {
+            "name": "Move To Fuel"
+          }
+        },
+        {
+          "type": "named",
+          "data": {
+            "name": "Pathfind to Mid-Right Bumper"
+          }
+        },
+        {
+          "type": "named",
+          "data": {
+            "name": "Drive Over Bump To Alliance"
+          }
+        },
+        {
+          "type": "race",
+          "data": {
+            "commands": [
+              {
+                "type": "path",
+                "data": {
+                  "pathName": "BumperRToClimb"
+                }
+              },
+              {
+                "type": "named",
+                "data": {
+                  "name": "Shoot On The Move"
+                }
+              }
+            ]
+          }
+        }
+      ]
+    }
+  },
+  "resetOdom": true,
+  "folder": null,
+  "choreoAuto": true
+}
