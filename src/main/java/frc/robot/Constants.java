@@ -224,9 +224,8 @@ public final class Constants {
   }
 
   public static class AutoConstants {
-    public static final PIDConstants translationPID = new PIDConstants(0, 0.0, 0.0); // 2 0 0.1
-    public static final PIDConstants rotationPID = new PIDConstants(0, 0.0, 0.0); // 1.1 0 0.1
-
+    public static final PIDConstants translationPID = new PIDConstants(2, 0.0, 0.1); // 5 2.2
+    public static final PIDConstants rotationPID = new PIDConstants(1.4, 0.0, 0.1); // 1  2.8
     public static final PathConstraints pathConstraints =
         new PathConstraints(
             SwerveConstants.maxTranslationalSpeed,

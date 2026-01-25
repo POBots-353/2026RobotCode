@@ -64,7 +64,7 @@ public class RobotContainer {
   public RobotContainer() {
     // Configure the trigger bindings
     configureDriverBindings();
-    // configureOperatorBindings();
+    configureOperatorBindings();
     swerve.configureAutoBuilder();
 
     configureAutoChooser();
@@ -100,15 +100,7 @@ public class RobotContainer {
 
     driverController.a().whileTrue(swerve.pathFindThroughTrench());
 
-    // driverController.b().whileTrue(turret.spinZero());
-    driverController.x().whileTrue(turret.spinOne());
-    driverController.b().whileTrue(turret.spinZero());
-
     turret.setDefaultCommand(turret.faceTarget(AllianceUtil::getHubPose, swerve::getRobotPose));
-
-    // driverController
-    //     .y()
-    //     .whileTrue(turret.faceTarget(AllianceUtil::getHubPose, swerve::getRobotPose));
   }
 
   private void configureOperatorBindings() {

@@ -4,12 +4,10 @@
 
 package frc.robot.subsystems;
 
+import au.grapplerobotics.LaserCan;
 import com.ctre.phoenix6.configs.TalonFXConfiguration;
 import com.ctre.phoenix6.hardware.TalonFX;
-
-import au.grapplerobotics.LaserCan;
 import edu.wpi.first.math.filter.Debouncer;
-import edu.wpi.first.math.filter.Debouncer.DebounceType;
 import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
 import frc.robot.Constants.SpindexerConstants;
@@ -18,7 +16,6 @@ public class Spindexer extends SubsystemBase {
   private TalonFX SpindexerMotor;
   private LaserCan SpindexerLaser;
   private Debouncer SpindexDebouncer;
-
 
   /** Creates a new Spindexer. */
   public Spindexer() {
@@ -68,31 +65,29 @@ public class Spindexer extends SubsystemBase {
         });
   }
 
-  //new command runUntilEMpty
+  // new command runUntilEMpty
   // empty means laser can cant see anything anymore
   // look up debouncer
 
-  public Command runUntilEmptyCommand(){
-    return (runSpindexer()) .until(()-> SpindexDebouncer.calculate(!beamBroken()));
+  public Command runUntilEmptyCommand() {
+    return (runSpindexer()).until(() -> SpindexDebouncer.calculate(!beamBroken()));
   }
-  
-  
-  public boolean beamBroken(){
+
+  public boolean beamBroken() {
     LaserCan.Measurement measurement = SpindexerLaser.getMeasurement();
 
-    if (measurement != null && measurement.status == LaserCan.LASERCAN_STATUS_VALID_MEASUREMENT){
+    if (measurement != null && measurement.status == LaserCan.LASERCAN_STATUS_VALID_MEASUREMENT) {
 
-      if (measurement.distance_mm <= SpindexerConstants.SpindexerDistance){
+      if (measurement.distance_mm <= SpindexerConstants.SpindexerDistance) {
         return true;
 
-      }else {
+      } else {
         return false;
       }
-    }else{
+    } else {
       return false;
     }
-  } 
-
+  }
 
   @Override
   public void periodic() {
