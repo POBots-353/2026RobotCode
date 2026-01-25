@@ -28,7 +28,6 @@ import edu.wpi.first.math.system.plant.DCMotor;
 import edu.wpi.first.math.util.Units;
 import edu.wpi.first.units.measure.Angle;
 import edu.wpi.first.wpilibj.RobotController;
-import edu.wpi.first.wpilibj.Timer;
 import edu.wpi.first.wpilibj.simulation.SingleJointedArmSim;
 import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 import edu.wpi.first.wpilibj2.command.Command;
@@ -244,16 +243,6 @@ public class Turret extends SubsystemBase {
         -.15248,
         .376,
         new Rotation3d(0, 0, turretPosition.getValue().in(Radians)));
-  }
-
-  @Logged(name = "put Hood Angle")
-  public Pose3d getHoodPose3d() {
-    return new Pose3d(
-        -0.051,
-        -0.156,
-        0.448,
-        new Rotation3d(
-            0, 3 * Math.sin(Timer.getFPGATimestamp()), turretPosition.getValue().in(Radians)));
   }
 
   @Logged(name = "Zeroed Poses Turret")

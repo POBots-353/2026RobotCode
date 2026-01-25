@@ -56,7 +56,7 @@ public class RobotContainer {
   private final Turret turret = new Turret();
 
   @Logged(name = "Hood")
-  private final Hood hood = new Hood();
+  private final Hood hood = new Hood(turret);
 
   private final Shooter shooter = new Shooter();
 
