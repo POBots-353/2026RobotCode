@@ -15,40 +15,31 @@ import com.ctre.phoenix6.controls.MotionMagicVoltage;
 import com.ctre.phoenix6.hardware.TalonFX;
 import edu.wpi.first.epilogue.Logged;
 import edu.wpi.first.math.geometry.Pose2d;
-import edu.wpi.first.math.geometry.Pose3d;
 import edu.wpi.first.math.geometry.Rotation2d;
-import edu.wpi.first.math.geometry.Rotation3d;
 import edu.wpi.first.math.geometry.Transform2d;
-import edu.wpi.first.math.geometry.Transform3d;
-import edu.wpi.first.math.geometry.Translation3d;
 import edu.wpi.first.math.interpolation.InterpolatingDoubleTreeMap;
 import edu.wpi.first.units.measure.Angle;
 import edu.wpi.first.units.measure.Distance;
 import edu.wpi.first.units.measure.LinearVelocity;
-import edu.wpi.first.wpilibj.Timer;
 import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
 import frc.robot.Constants.FieldConstants;
 import frc.robot.Constants.HoodConstants;
 import frc.robot.Constants.TurretConstants;
-import frc.robot.util.ShotCalculator;
 import java.util.function.Supplier;
 
 public class Hood extends SubsystemBase {
   private TalonFX hoodMotor;
   private StatusSignal<Angle> hoodPosition;
-  private Turret turret;
 
   private final InterpolatingDoubleTreeMap hoodAngleMap = HoodConstants.hoodAngleMap;
 
   private final MotionMagicVoltage motionMagicRequest = new MotionMagicVoltage(0);
 
-  public Hood(Turret turret) {
+  public Hood() {
     hoodMotor = new TalonFX(HoodConstants.hoodMotorID);
     hoodMotor.getConfigurator().apply(HoodConstants.hoodConfigs);
-
-    this.turret = turret;
 
     zeroHood();
 
@@ -62,16 +53,6 @@ public class Hood extends SubsystemBase {
   @Logged(name = "Hood Angle")
   public Angle getHoodAngle() {
     return hoodPosition.getValue();
-  }
-
-  @Logged(name = "3D Pose Hood")
-  public Pose3d getHoodPose3d() {
-    return turret
-        .getTurretPose3d()
-        .transformBy(
-            new Transform3d(
-                new Translation3d(0.121, 0.0, 0.072),
-                new Rotation3d(0.0,Timer.getFPGATimestamp() % 360, 0.0)));
   }
 
   public boolean atAngle(Angle target, Angle tolerance) {
