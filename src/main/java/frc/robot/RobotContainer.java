@@ -57,7 +57,7 @@ public class RobotContainer {
   private final Turret turret = new Turret();
 
   @Logged(name = "Hood")
-  private final Hood hood = new Hood(turret);
+  private final Hood hood = new Hood();
 
   @Logged(name = "3D Visualization")
   private final RobotVisualization robotVisualization = new RobotVisualization(turret, hood);
