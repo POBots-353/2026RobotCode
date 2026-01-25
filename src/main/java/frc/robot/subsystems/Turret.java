@@ -21,15 +21,14 @@ import edu.wpi.first.math.MathUtil;
 import edu.wpi.first.math.geometry.Pose2d;
 import edu.wpi.first.math.geometry.Pose3d;
 import edu.wpi.first.math.geometry.Rotation2d;
-import edu.wpi.first.math.geometry.Rotation3d;
 import edu.wpi.first.math.geometry.Transform2d;
 import edu.wpi.first.math.geometry.Translation2d;
 import edu.wpi.first.math.system.plant.DCMotor;
+import edu.wpi.first.math.system.plant.LinearSystemId;
 import edu.wpi.first.math.util.Units;
 import edu.wpi.first.units.measure.Angle;
 import edu.wpi.first.wpilibj.RobotController;
-import edu.wpi.first.wpilibj.Timer;
-import edu.wpi.first.wpilibj.simulation.SingleJointedArmSim;
+import edu.wpi.first.wpilibj.simulation.DCMotorSim;
 import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
@@ -58,7 +57,7 @@ public class Turret extends SubsystemBase {
 
   private final MotionMagicVoltage motionMagicRequest = new MotionMagicVoltage(0);
 
-  private final SingleJointedArmSim turretSim;
+  private final DCMotorSim turretSim;
 
   public Turret() {
     encoderA = new CANcoder(TurretConstants.encoderAID);
@@ -87,17 +86,10 @@ public class Turret extends SubsystemBase {
     turretPosition = turretMotor.getPosition();
 
     turretSim =
-        new SingleJointedArmSim(
-            DCMotor.getKrakenX60(1),
-            TurretConstants.totalGearRatio,
-            0.001,
-            0.1,
-            TurretConstants.MIN_ANGLE.in(Radians),
-            TurretConstants.MAX_ANGLE.in(Radians),
-            false,
-            0,
-            0.0,
-            0.0);
+        new DCMotorSim(
+            LinearSystemId.createDCMotorSystem(
+                DCMotor.getKrakenX60(1), 0.196, TurretConstants.totalGearRatio),
+            DCMotor.getKrakenX60(1));
   }
 
   // public void faceTowards(Pose2d target, Pose2d robotPose) {
@@ -237,25 +229,6 @@ public class Turret extends SubsystemBase {
     return Math.abs(Units.radiansToDegrees(errorRad)) > tolerance.in(Degrees);
   }
 
-  @Logged(name = "3D Pose Turret")
-  public Pose3d getTurretPose3d() {
-    return new Pose3d(
-        -.1523 + 0.0205,
-        -.15248,
-        .376,
-        new Rotation3d(0, 0, turretPosition.getValue().in(Radians)));
-  }
-
-  @Logged(name = "put Hood Angle")
-  public Pose3d getHoodPose3d() {
-    return new Pose3d(
-        -0.051,
-        -0.156,
-        0.448,
-        new Rotation3d(
-            0, 3 * Math.sin(Timer.getFPGATimestamp()), turretPosition.getValue().in(Radians)));
-  }
-
   @Logged(name = "Zeroed Poses Turret")
   public Pose3d[] zeroedComponentPoses() {
     return new Pose3d[] {new Pose3d(), new Pose3d()};
@@ -279,9 +252,9 @@ public class Turret extends SubsystemBase {
     turretSim.update(0.020);
 
     turretSimState.setRawRotorPosition(
-        (turretSim.getAngleRads() / (2 * Math.PI)) * TurretConstants.totalGearRatio);
+        turretSim.getAngularPosition().times(TurretConstants.totalGearRatio));
 
     turretSimState.setRotorVelocity(
-        (turretSim.getVelocityRadPerSec() / (2 * Math.PI)) * TurretConstants.totalGearRatio);
+        turretSim.getAngularVelocity().times(TurretConstants.totalGearRatio));
   }
 }

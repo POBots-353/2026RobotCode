@@ -27,6 +27,7 @@ import frc.robot.subsystems.Shooter;
 import frc.robot.subsystems.Swerve;
 import frc.robot.subsystems.Turret;
 import frc.robot.util.AllianceUtil;
+import frc.robot.util.RobotVisualization;
 import frc.robot.util.SwerveTelemetry;
 import java.util.function.Supplier;
 
@@ -57,6 +58,9 @@ public class RobotContainer {
 
   @Logged(name = "Hood")
   private final Hood hood = new Hood();
+
+  @Logged(name = "3D Visualization")
+  private final RobotVisualization robotVisualization = new RobotVisualization(turret, hood);
 
   private final Shooter shooter = new Shooter();
 
