@@ -29,7 +29,6 @@ import edu.wpi.first.math.geometry.Rotation2d;
 import edu.wpi.first.math.geometry.Rotation3d;
 import edu.wpi.first.math.geometry.Transform3d;
 import edu.wpi.first.math.geometry.Translation3d;
-import edu.wpi.first.math.interpolation.InterpolatingDoubleTreeMap;
 import edu.wpi.first.math.util.Units;
 import edu.wpi.first.units.measure.Angle;
 import edu.wpi.first.units.measure.AngularAcceleration;
@@ -71,7 +70,6 @@ public final class Constants {
         maxTranslationalSpeed.div(translationZeroToFull);
     public static final AngularAcceleration maxAngularAcceleration =
         maxRotationalSpeed.div(rotationZeroToFull);
-
 
     public static final double headingP = 0.0;
     public static final double headingD = 0.0;
@@ -265,10 +263,10 @@ public final class Constants {
   public static class HoodConstants {
     public static final int hoodMotorID = 22;
 
-    private static final double hoodGearRatio = 100.0;
+    public static final double hoodGearRatio = 100.0;
 
-    private static final Angle minAngle = Degrees.of(15.0);
-    private static final Angle maxAngle = Degrees.of(60.0);
+    public static final Angle minAngle = Degrees.of(15.0);
+    public static final Angle maxAngle = Degrees.of(60.0);
 
     public static final MotionMagicConfigs motionMagicConfigs =
         new MotionMagicConfigs()
@@ -313,16 +311,6 @@ public final class Constants {
             .withFeedback(feedbackConfigs)
             .withMotorOutput(motorOutputConfigs)
             .withSoftwareLimitSwitch(softwareLimitSwitchConfigs);
-
-    public static final InterpolatingDoubleTreeMap hoodAngleMap = new InterpolatingDoubleTreeMap();
-
-    static {
-      hoodAngleMap.put(1.5, 1.0);
-      hoodAngleMap.put(2.0, 2.0);
-      hoodAngleMap.put(2.5, 3.0);
-      hoodAngleMap.put(3.0, 4.0);
-      hoodAngleMap.put(3.53, 5.0); // random values (Distance, ROTATIONS)
-    }
   }
 
   public static class SpindexerConstants {

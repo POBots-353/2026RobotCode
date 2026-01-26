@@ -70,7 +70,6 @@ public class ShootOnTheMove extends Command {
   // Called every time the scheduler runs while the command is scheduled.
   @Override
   public void execute() {
-
     ChassisSpeeds fieldSpeeds = swerve.getChassisSpeeds();
 
     ChassisSpeeds fieldAcceleration = fieldSpeeds.minus(previousSpeeds).div(0.020);

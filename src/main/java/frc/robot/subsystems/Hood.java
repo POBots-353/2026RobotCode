@@ -17,7 +17,6 @@ import edu.wpi.first.epilogue.Logged;
 import edu.wpi.first.math.geometry.Pose2d;
 import edu.wpi.first.math.geometry.Rotation2d;
 import edu.wpi.first.math.geometry.Transform2d;
-import edu.wpi.first.math.interpolation.InterpolatingDoubleTreeMap;
 import edu.wpi.first.units.measure.Angle;
 import edu.wpi.first.units.measure.Distance;
 import edu.wpi.first.units.measure.LinearVelocity;
@@ -27,13 +26,12 @@ import edu.wpi.first.wpilibj2.command.SubsystemBase;
 import frc.robot.Constants.FieldConstants;
 import frc.robot.Constants.HoodConstants;
 import frc.robot.Constants.TurretConstants;
+import frc.robot.util.ShotCalculator;
 import java.util.function.Supplier;
 
 public class Hood extends SubsystemBase {
   private TalonFX hoodMotor;
   private StatusSignal<Angle> hoodPosition;
-
-  private final InterpolatingDoubleTreeMap hoodAngleMap = HoodConstants.hoodAngleMap;
 
   private final MotionMagicVoltage motionMagicRequest = new MotionMagicVoltage(0);
 
@@ -59,13 +57,13 @@ public class Hood extends SubsystemBase {
     return Math.abs(getHoodAngle().minus(target).in(Degrees)) < tolerance.in(Degrees);
   }
 
-  public double getInterpolatedHoodAngle(double distanceMeters) {
-    return hoodAngleMap.get(distanceMeters);
+  public Angle getInterpolatedHoodAngle(double distanceMeters) {
+    return ShotCalculator.hoodAngleMap.get(distanceMeters).getMeasure();
   }
 
-  public double getInterpolatedHoodAngle(Pose2d poseA, Pose2d poseB) {
+  public Angle getInterpolatedHoodAngle(Pose2d poseA, Pose2d poseB) {
     double distance = poseA.getTranslation().getDistance(poseB.getTranslation());
-    return hoodAngleMap.get(distance);
+    return ShotCalculator.hoodAngleMap.get(distance).getMeasure();
   }
 
   public Angle getPhysicsHoodAngle(

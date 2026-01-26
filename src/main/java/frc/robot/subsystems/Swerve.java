@@ -868,13 +868,14 @@ public class Swerve extends TunerSwerveDrivetrain implements Subsystem {
     SmartDashboard.putBoolean("Ferry Target / 3", ferryPoseIndex == 3);
   }
 
+  @Logged(name = "Chassis Speeds")
   public ChassisSpeeds getChassisSpeeds() {
     return stateCache.Speeds;
   }
 
   @Logged(name = "Rotation")
   public Rotation2d getRotation() {
-    return getPigeon2().getRotation2d();
+    return stateCache.Pose.getRotation();
   }
 
   @Logged(name = "Module States")
