@@ -18,13 +18,13 @@ import java.util.function.Supplier;
 
 /* You should consider using the more terse Command factories API instead
 https://docs.wpilib.org/en/stable/docs/software/commandbased/organizing-command-based.html#defining-commands */
-public class AimandShootStationary extends Command {
+public class PhysicsStationaryShoot extends Command {
   private final Shooter shooter;
   private final Hood hood;
   private final Supplier<Pose2d> robotPose;
   private final Supplier<Pose2d> targetPose;
 
-  public AimandShootStationary(
+  public PhysicsStationaryShoot(
       Shooter shooter, Hood hood, Supplier<Pose2d> robotPose, Supplier<Pose2d> targetPose) {
     this.shooter = shooter;
     this.hood = hood;

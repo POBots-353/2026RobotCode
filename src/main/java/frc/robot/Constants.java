@@ -313,16 +313,6 @@ public final class Constants {
             .withFeedback(feedbackConfigs)
             .withMotorOutput(motorOutputConfigs)
             .withSoftwareLimitSwitch(softwareLimitSwitchConfigs);
-
-    public static final InterpolatingDoubleTreeMap hoodAngleMap = new InterpolatingDoubleTreeMap();
-
-    static {
-      hoodAngleMap.put(1.5, 1.0);
-      hoodAngleMap.put(2.0, 2.0);
-      hoodAngleMap.put(2.5, 3.0);
-      hoodAngleMap.put(3.0, 4.0);
-      hoodAngleMap.put(3.53, 5.0); // random values (Distance, Rotations)
-    }
   }
 
   public static class SpindexerConstants {

@@ -874,8 +874,15 @@ public class Swerve extends TunerSwerveDrivetrain implements Subsystem {
 
   @Logged(name = "Rotation")
   public Rotation2d getRotation() {
+return stateCache.Pose.getRotation();
+  }
+
+  
+  @Logged(name = "Pigeon Rotation")
+  public Rotation2d getPigeonRotation() {
     return getPigeon2().getRotation2d();
   }
+
 
   @Logged(name = "Module States")
   public SwerveModuleState[] getModuleStates() {

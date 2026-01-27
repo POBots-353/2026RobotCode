@@ -21,7 +21,7 @@ import edu.wpi.first.wpilibj2.command.sysid.SysIdRoutine.Direction;
 import frc.robot.Constants.FieldConstants;
 import frc.robot.Constants.OperatorConstants;
 import frc.robot.Constants.SwerveConstants;
-import frc.robot.commands.AimandShootStationary;
+import frc.robot.commands.PhysicsStationaryShoot;
 import frc.robot.commands.MoveToFuel;
 import frc.robot.commands.ShootOnTheMove;
 import frc.robot.commands.TeleopSwerve;
@@ -135,9 +135,8 @@ public class RobotContainer {
     turret.setDefaultCommand(turret.faceTarget(AllianceUtil::getHubPose, swerve::getRobotPose));
 
     hood.setDefaultCommand(
-        new AimandShootStationary(
+        new PhysicsStationaryShoot(
             shooter, hood, swerve::getRobotPose, () -> AllianceUtil.getHubPose()));
-
   }
 
   private void configureOperatorBindings() {
