@@ -4,6 +4,8 @@
 
 package frc.robot;
 
+import static edu.wpi.first.units.Units.MetersPerSecond;
+
 import com.pathplanner.lib.auto.AutoBuilder;
 import com.pathplanner.lib.auto.NamedCommands;
 import edu.wpi.first.epilogue.Logged;
@@ -11,6 +13,7 @@ import edu.wpi.first.math.geometry.Pose2d;
 import edu.wpi.first.wpilibj.smartdashboard.SendableChooser;
 import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 import edu.wpi.first.wpilibj2.command.Command;
+import edu.wpi.first.wpilibj2.command.CommandScheduler;
 import edu.wpi.first.wpilibj2.command.Commands;
 import edu.wpi.first.wpilibj2.command.button.CommandXboxController;
 import edu.wpi.first.wpilibj2.command.button.Trigger;
@@ -18,6 +21,7 @@ import edu.wpi.first.wpilibj2.command.sysid.SysIdRoutine.Direction;
 import frc.robot.Constants.FieldConstants;
 import frc.robot.Constants.OperatorConstants;
 import frc.robot.Constants.SwerveConstants;
+import frc.robot.commands.AimandShootStationary;
 import frc.robot.commands.MoveToFuel;
 import frc.robot.commands.ShootOnTheMove;
 import frc.robot.commands.TeleopSwerve;
@@ -59,10 +63,12 @@ public class RobotContainer {
   @Logged(name = "Hood")
   private final Hood hood = new Hood();
 
-  @Logged(name = "3D Visualization")
-  private final RobotVisualization robotVisualization = new RobotVisualization(turret, hood);
-
+  @Logged(name = "Shooter")
   private final Shooter shooter = new Shooter();
+
+  @Logged(name = "3D Visualization")
+  private final RobotVisualization robotVisualization =
+      new RobotVisualization(turret, hood, swerve, shooter);
 
   private final SwerveTelemetry swerveTelemetry = new SwerveTelemetry();
 
@@ -80,11 +86,12 @@ public class RobotContainer {
     NamedCommands.registerCommand(
         "Pathfind to Mid-Right Bumper", swerve.pathFindToPose(FieldConstants.midRBumperPose));
 
-    NamedCommands.registerCommand("Shoot", Commands.run(() -> shooter.setSpeed(1)).withTimeout(1));
+    NamedCommands.registerCommand(
+        "Shoot", Commands.run(() -> shooter.setSpeed(MetersPerSecond.of(1))).withTimeout(1));
 
     // Configure the trigger bindings
     configureDriverBindings();
-    configureOperatorBindings();
+    // configureOperatorBindings();
     swerve.configureAutoBuilder();
 
     configureAutoChooser();
@@ -92,6 +99,10 @@ public class RobotContainer {
     swerve.updateFerryPoseDashboard(ferryPoseIndex);
 
     swerve.registerTelemetry(swerveTelemetry::telemeterize);
+
+    if (Robot.isSimulation()) {
+      CommandScheduler.getInstance().schedule(robotVisualization.projectileUpdater());
+    }
   }
 
   /**
@@ -119,8 +130,14 @@ public class RobotContainer {
             swerve));
 
     driverController.a().whileTrue(swerve.pathFindThroughTrench());
+    driverController.rightTrigger().onTrue(robotVisualization.shootFuel());
 
     turret.setDefaultCommand(turret.faceTarget(AllianceUtil::getHubPose, swerve::getRobotPose));
+
+    hood.setDefaultCommand(
+        new AimandShootStationary(
+            shooter, hood, swerve::getRobotPose, () -> AllianceUtil.getHubPose()));
+
   }
 
   private void configureOperatorBindings() {

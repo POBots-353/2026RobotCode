@@ -15,8 +15,8 @@ import frc.robot.subsystems.Hood;
 import frc.robot.subsystems.Shooter;
 import frc.robot.subsystems.Swerve;
 import frc.robot.subsystems.Turret;
-import frc.robot.util.ShotCalculator;
-import frc.robot.util.ShotCalculator.ShootingParameters;
+import frc.robot.util.SOTMCalculator;
+import frc.robot.util.SOTMCalculator.ShootingParameters;
 import java.util.function.Supplier;
 
 /* You should consider using the more terse Command factories API instead https://docs.wpilib.org/en/stable/docs/software/commandbased/organizing-command-based.html#defining-commands */
@@ -79,7 +79,7 @@ public class ShootOnTheMove extends Command {
     double fieldAccelY = accelYFilter.calculate(fieldAcceleration.vyMetersPerSecond);
 
     ShootingParameters shootingParameters =
-        ShotCalculator.getParameters(swerve, turret, targetPose, fieldAccelX, fieldAccelY);
+        SOTMCalculator.getParameters(swerve, turret, targetPose, fieldAccelX, fieldAccelY);
 
     turret.setTargetAngle(shootingParameters.turretAngle());
 
