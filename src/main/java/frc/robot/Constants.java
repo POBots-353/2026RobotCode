@@ -72,7 +72,6 @@ public final class Constants {
     public static final AngularAcceleration maxAngularAcceleration =
         maxRotationalSpeed.div(rotationZeroToFull);
 
-
     public static final double headingP = 0.0;
     public static final double headingD = 0.0;
 
@@ -176,7 +175,7 @@ public final class Constants {
         new Pose2d(5.6198601722717285, 5.5177741050720215, Rotation2d.kZero);
 
     // top of the plastic ring on the hub is 72 inches
-    public static final Distance hubHeight = Inches.of(72 - 8);
+    public static final Distance hubHeight = Inches.of(72);
 
     public static final List<Pose2d> blueFerryPoints =
         List.of(
@@ -222,7 +221,7 @@ public final class Constants {
         new MotorOutputConfigs()
             .withInverted(
                 InvertedValue.CounterClockwise_Positive) // needs to spin left when wires up
-            .withNeutralMode(NeutralModeValue.Coast);
+            .withNeutralMode(NeutralModeValue.Brake);
 
     public static final SoftwareLimitSwitchConfigs softwareLimitSwitchConfigs =
         new SoftwareLimitSwitchConfigs()
@@ -244,7 +243,7 @@ public final class Constants {
             .withSoftwareLimitSwitch(softwareLimitSwitchConfigs);
 
     public static final Translation3d robotToTurret =
-        new Translation3d(-0.26, .26, Units.inchesToMeters(10.826));
+        new Translation3d(-0.153, -0.15248, 0.376 + .1524);
 
     public static final int turretMotorID = 19;
     public static final int encoderAID = 20;
@@ -265,10 +264,11 @@ public final class Constants {
   public static class HoodConstants {
     public static final int hoodMotorID = 22;
 
-    private static final double hoodGearRatio = 100.0;
+    public static final Angle minAngle = Degrees.of(21.448);
+    public static final Angle maxAngle = Degrees.of(59.231);
 
-    private static final Angle minAngle = Degrees.of(15.0);
-    private static final Angle maxAngle = Degrees.of(60.0);
+    public static final double hoodGearRatio =
+        ((48 / 12) * (30 / 15) * (20 / 10)) / ((maxAngle.minus(minAngle)).in(Degrees) / 360);
 
     public static final MotionMagicConfigs motionMagicConfigs =
         new MotionMagicConfigs()
@@ -277,11 +277,11 @@ public final class Constants {
 
     public static final Slot0Configs slot0Configs =
         new Slot0Configs()
-            .withKS(0.0)
-            .withKV(0.0)
-            .withKA(0.00)
-            .withKG(0.00)
-            .withKP(0.0)
+            .withKS(0.01)
+            .withKV(0.01)
+            .withKA(0.01)
+            .withKG(0.2)
+            .withKP(50.0)
             .withKI(0.00)
             .withKD(0.00)
             .withStaticFeedforwardSign(StaticFeedforwardSignValue.UseVelocitySign);
@@ -293,7 +293,7 @@ public final class Constants {
         new MotorOutputConfigs()
             .withInverted(
                 InvertedValue.CounterClockwise_Positive) // needs to spin left when wires up
-            .withNeutralMode(NeutralModeValue.Coast);
+            .withNeutralMode(NeutralModeValue.Brake);
 
     public static final SoftwareLimitSwitchConfigs softwareLimitSwitchConfigs =
         new SoftwareLimitSwitchConfigs()
@@ -321,7 +321,7 @@ public final class Constants {
       hoodAngleMap.put(2.0, 2.0);
       hoodAngleMap.put(2.5, 3.0);
       hoodAngleMap.put(3.0, 4.0);
-      hoodAngleMap.put(3.53, 5.0); // random values (Distance, ROTATIONS)
+      hoodAngleMap.put(3.53, 5.0); // random values (Distance, Rotations)
     }
   }
 

@@ -16,7 +16,7 @@ import frc.robot.Constants.TurretConstants;
 import frc.robot.subsystems.Swerve;
 import frc.robot.subsystems.Turret;
 
-public class ShotCalculator {
+public class SOTMCalculator {
   private static InterpolatingDoubleTreeMap hoodAngleMap = HoodConstants.hoodAngleMap;
   private static InterpolatingDoubleTreeMap shooterSpeedMap = new InterpolatingDoubleTreeMap();
   private static InterpolatingDoubleTreeMap timeOfFlightMap = new InterpolatingDoubleTreeMap();
