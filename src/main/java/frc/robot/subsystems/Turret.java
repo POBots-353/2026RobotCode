@@ -117,10 +117,10 @@ public class Turret extends SubsystemBase {
                   new Transform2d(
                       TurretConstants.robotToTurret.toTranslation2d(), Rotation2d.kZero));
 
-          Rotation2d turretAngle =
+          Rotation2d angleToFace =
               target.getTranslation().minus(turretPose.getTranslation()).getAngle();
-          Rotation2d angleToFace = turretAngle.minus(robotPose.getRotation());
-          Angle finalAngle = Degrees.of(angleToFace.getDegrees());
+          Rotation2d turretAngle = angleToFace.minus(robotPose.getRotation());
+          Angle finalAngle = Degrees.of(turretAngle.getDegrees());
           finalAngle = optimizeAngle(finalAngle);
 
           turretMotor.setControl(motionMagicRequest.withPosition(finalAngle.in(Rotations)));
