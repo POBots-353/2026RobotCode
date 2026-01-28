@@ -4,16 +4,19 @@
 
 package frc.robot.commands;
 
+import static edu.wpi.first.units.Units.Degrees;
 import static edu.wpi.first.units.Units.Meters;
+import static edu.wpi.first.units.Units.MetersPerSecond;
 
 import edu.wpi.first.math.geometry.Pose2d;
 import edu.wpi.first.units.measure.Distance;
+import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 import edu.wpi.first.wpilibj2.command.Command;
-import frc.robot.Constants.FieldConstants;
 import frc.robot.subsystems.Hood;
 import frc.robot.subsystems.Shooter;
 import frc.robot.util.HoodShotCalculator;
 import frc.robot.util.HoodShotCalculator.ShotSolution;
+import frc.robot.util.RobotVisualization;
 import java.util.function.Supplier;
 
 /* You should consider using the more terse Command factories API instead
@@ -21,15 +24,24 @@ https://docs.wpilib.org/en/stable/docs/software/commandbased/organizing-command-
 public class PhysicsStationaryShoot extends Command {
   private final Shooter shooter;
   private final Hood hood;
+  private final RobotVisualization robotVisualization;
   private final Supplier<Pose2d> robotPose;
   private final Supplier<Pose2d> targetPose;
+  private final Supplier<Distance> targetHeight;
 
   public PhysicsStationaryShoot(
-      Shooter shooter, Hood hood, Supplier<Pose2d> robotPose, Supplier<Pose2d> targetPose) {
+      Shooter shooter,
+      Hood hood,
+      RobotVisualization robotVisualization,
+      Supplier<Pose2d> robotPose,
+      Supplier<Pose2d> targetPose,
+      Supplier<Distance> targetHeight) {
     this.shooter = shooter;
     this.hood = hood;
+    this.robotVisualization = robotVisualization;
     this.robotPose = robotPose;
     this.targetPose = targetPose;
+    this.targetHeight = targetHeight;
     addRequirements(shooter, hood);
   }
 
@@ -43,9 +55,14 @@ public class PhysicsStationaryShoot extends Command {
     Distance distance =
         Meters.of(robotPose.get().getTranslation().getDistance(targetPose.get().getTranslation()));
     ShotSolution solution =
-        HoodShotCalculator.solveShot(distance, FieldConstants.hubHeight, shooter.getExitVelocity());
+        HoodShotCalculator.solveShot(distance, targetHeight.get(), shooter.getExitVelocity());
     shooter.logSolution(solution);
     hood.setTargetAngle(solution.hoodAngle());
+    robotVisualization.projectileUpdater();
+
+    SmartDashboard.putNumber("TESTING/Distance", distance.in(Meters));
+    SmartDashboard.putNumber("TESTING/Angle", solution.hoodAngle().in(Degrees));
+    SmartDashboard.putNumber("TESTING/Velocity", solution.exitVelocity().in(MetersPerSecond));
   }
 
   // Called once the command ends or is interrupted.

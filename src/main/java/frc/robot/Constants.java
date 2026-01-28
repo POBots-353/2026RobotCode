@@ -29,7 +29,6 @@ import edu.wpi.first.math.geometry.Rotation2d;
 import edu.wpi.first.math.geometry.Rotation3d;
 import edu.wpi.first.math.geometry.Transform3d;
 import edu.wpi.first.math.geometry.Translation3d;
-import edu.wpi.first.math.interpolation.InterpolatingDoubleTreeMap;
 import edu.wpi.first.math.util.Units;
 import edu.wpi.first.units.measure.Angle;
 import edu.wpi.first.units.measure.AngularAcceleration;
@@ -175,7 +174,7 @@ public final class Constants {
         new Pose2d(5.6198601722717285, 5.5177741050720215, Rotation2d.kZero);
 
     // top of the plastic ring on the hub is 72 inches
-    public static final Distance hubHeight = Inches.of(72);
+    public static final Distance hubHeight = Inches.of(72 - 10);
 
     public static final List<Pose2d> blueFerryPoints =
         List.of(

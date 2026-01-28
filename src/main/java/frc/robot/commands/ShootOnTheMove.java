@@ -5,6 +5,7 @@
 package frc.robot.commands;
 
 import static edu.wpi.first.units.Units.Degrees;
+import static edu.wpi.first.units.Units.MetersPerSecond;
 
 import edu.wpi.first.math.filter.Debouncer;
 import edu.wpi.first.math.filter.LinearFilter;
@@ -15,6 +16,7 @@ import frc.robot.subsystems.Hood;
 import frc.robot.subsystems.Shooter;
 import frc.robot.subsystems.Swerve;
 import frc.robot.subsystems.Turret;
+import frc.robot.util.RobotVisualization;
 import frc.robot.util.SOTMCalculator;
 import frc.robot.util.SOTMCalculator.ShootingParameters;
 import java.util.function.Supplier;
@@ -37,21 +39,25 @@ public class ShootOnTheMove extends Command {
   private LinearFilter accelXFilter = LinearFilter.movingAverage(2);
   private LinearFilter accelYFilter = LinearFilter.movingAverage(2);
 
-  private ChassisSpeeds previousSpeeds = new ChassisSpeeds();
+  private ChassisSpeeds previousFieldSpeeds = new ChassisSpeeds();
 
-  private Pose2d targetPose;
+  private Supplier<Pose2d> targetPoseSupplier;
+
+  private RobotVisualization robotVisualization;
 
   public ShootOnTheMove(
       Swerve swerve,
       Turret turret,
       Hood hood,
       Shooter shooter,
-      Supplier<Pose2d> targetPoseSupplier) {
+      Supplier<Pose2d> targetPoseSupplier,
+      RobotVisualization robotVisualization) {
     this.swerve = swerve;
     this.turret = turret;
     this.hood = hood;
     this.shooter = shooter;
-    this.targetPose = targetPoseSupplier.get();
+    this.targetPoseSupplier = targetPoseSupplier;
+    this.robotVisualization = robotVisualization;
     addRequirements(hood, turret, shooter);
   }
 
@@ -64,40 +70,55 @@ public class ShootOnTheMove extends Command {
     accelXFilter.reset();
     accelYFilter.reset();
 
-    previousSpeeds = swerve.getChassisSpeeds();
+    previousFieldSpeeds =
+        ChassisSpeeds.fromRobotRelativeSpeeds(
+            swerve.getChassisSpeeds(), swerve.getRobotPose().getRotation());
   }
 
   // Called every time the scheduler runs while the command is scheduled.
   @Override
   public void execute() {
-    ChassisSpeeds fieldSpeeds = swerve.getChassisSpeeds();
 
-    ChassisSpeeds fieldAcceleration = fieldSpeeds.minus(previousSpeeds).div(0.020);
+    ChassisSpeeds robotRelativeChassisSpeeds = swerve.getChassisSpeeds();
+
+    ChassisSpeeds fieldRelativeChassisSpeeds =
+        ChassisSpeeds.fromRobotRelativeSpeeds(
+            robotRelativeChassisSpeeds, swerve.getRobotPose().getRotation());
+
+    ChassisSpeeds fieldAcceleration =
+        fieldRelativeChassisSpeeds.minus(previousFieldSpeeds).div(0.020);
 
     double fieldAccelX = accelXFilter.calculate(fieldAcceleration.vxMetersPerSecond);
     double fieldAccelY = accelYFilter.calculate(fieldAcceleration.vyMetersPerSecond);
 
     ShootingParameters shootingParameters =
-        SOTMCalculator.getParameters(swerve, turret, targetPose, fieldAccelX, fieldAccelY);
+        SOTMCalculator.getParameters(
+            swerve,
+            turret,
+            targetPoseSupplier.get(),
+            fieldAccelX,
+            fieldAccelY,
+            fieldRelativeChassisSpeeds);
 
     turret.setTargetAngle(shootingParameters.turretAngle());
 
     hood.setTargetAngle(shootingParameters.hoodAngle());
 
-    // shooter.setSpeed(shootingParametes.shooterSpeed());
+    shooter.setGoalSpeed(MetersPerSecond.of(shootingParameters.shooterSpeed()));
 
     double turretErrorDeg =
         turret.getTurretAngle().in(Degrees) - shootingParameters.turretAngle().in(Degrees);
     double hoodErrorDeg =
         hood.getHoodAngle().in(Degrees) - shootingParameters.hoodAngle().in(Degrees);
 
-    if (turretSetPointDebouncer.calculate(Math.abs(turretErrorDeg) <= turretTolerance)
-        && hoodSetPointDebouncer.calculate(Math.abs(hoodErrorDeg) <= hoodTolerance)
-        && shooterDebouncer.calculate(shooterAtSetPoint)) {
-      // indexer.feed();
-    } else {
-      // indexer.stop();
-    }
+    // if (turretSetPointDebouncer.calculate(Math.abs(turretErrorDeg) <= turretTolerance)
+    //     && hoodSetPointDebouncer.calculate(Math.abs(hoodErrorDeg) <= hoodTolerance)
+    //     && shooterDebouncer.calculate(shooterAtSetPoint)) {
+    robotVisualization.shootFuelOTM(shootingParameters);
+    robotVisualization.projectileUpdater();
+    // } else {
+    //   // indexer.stop();
+    // }
   }
 
   // Called once the command ends or is interrupted.

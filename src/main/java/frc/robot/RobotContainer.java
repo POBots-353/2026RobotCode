@@ -21,8 +21,9 @@ import edu.wpi.first.wpilibj2.command.sysid.SysIdRoutine.Direction;
 import frc.robot.Constants.FieldConstants;
 import frc.robot.Constants.OperatorConstants;
 import frc.robot.Constants.SwerveConstants;
-import frc.robot.commands.PhysicsStationaryShoot;
+import frc.robot.Constants.TurretConstants;
 import frc.robot.commands.MoveToFuel;
+import frc.robot.commands.PhysicsStationaryShoot;
 import frc.robot.commands.ShootOnTheMove;
 import frc.robot.commands.TeleopSwerve;
 import frc.robot.generated.TunerConstants;
@@ -79,7 +80,8 @@ public class RobotContainer {
         "Drive Over Bump To Alliance", swerve.driveOverBump("To Alliance"));
     NamedCommands.registerCommand("Move To Fuel", new MoveToFuel(swerve).withTimeout(2));
     NamedCommands.registerCommand(
-        "Shoot On The Move", new ShootOnTheMove(swerve, turret, hood, shooter, ferryPoseSupplier));
+        "Shoot On The Move",
+        new ShootOnTheMove(swerve, turret, hood, shooter, ferryPoseSupplier, robotVisualization));
 
     NamedCommands.registerCommand(
         "Pathfind to Mid-Left Bumper", swerve.pathFindToPose(FieldConstants.midLBumperPose));
@@ -136,7 +138,40 @@ public class RobotContainer {
 
     hood.setDefaultCommand(
         new PhysicsStationaryShoot(
-            shooter, hood, swerve::getRobotPose, () -> AllianceUtil.getHubPose()));
+            shooter,
+            hood,
+            robotVisualization,
+            swerve::getRobotPose,
+            AllianceUtil::getHubPose,
+            () -> FieldConstants.hubHeight));
+
+    driverController
+        .rightBumper()
+        .whileTrue(
+            new ShootOnTheMove(
+                swerve, turret, hood, shooter, AllianceUtil::getHubPose, robotVisualization));
+
+    Trigger ferryMode = driverController.leftBumper();
+
+    ferryMode.whileTrue(turret.faceTarget(ferryPoseSupplier, swerve::getRobotPose));
+
+    ferryMode.whileTrue(
+        new PhysicsStationaryShoot(
+            shooter,
+            hood,
+            robotVisualization,
+            swerve::getRobotPose,
+            ferryPoseSupplier,
+            () -> TurretConstants.robotToTurret.getMeasureZ()));
+
+    driverController
+        .y()
+        .onTrue(
+            Commands.runOnce(
+                () -> {
+                  ferryPoseIndex = (ferryPoseIndex + 1) % FieldConstants.blueFerryPoints.size();
+                  swerve.updateFerryPoseDashboard(ferryPoseIndex);
+                }));
   }
 
   private void configureOperatorBindings() {
@@ -145,7 +180,8 @@ public class RobotContainer {
 
     hood.setDefaultCommand(hood.aimForTarget(AllianceUtil::getHubPose, swerve::getRobotPose));
 
-    ferryMode.whileTrue(new ShootOnTheMove(swerve, turret, hood, shooter, ferryPoseSupplier));
+    ferryMode.whileTrue(
+        new ShootOnTheMove(swerve, turret, hood, shooter, ferryPoseSupplier, robotVisualization));
 
     operatorController
         .y()
