@@ -1,0 +1,94 @@
+{
+  "version": "2025.0",
+  "command": {
+    "type": "sequential",
+    "data": {
+      "commands": [
+        {
+          "type": "named",
+          "data": {
+            "name": "SOTM Until Empty"
+          }
+        },
+        {
+          "type": "deadline",
+          "data": {
+            "commands": [
+              {
+                "type": "path",
+                "data": {
+                  "pathName": "FerryAuto.0"
+                }
+              },
+              {
+                "type": "named",
+                "data": {
+                  "name": "FerryOTM"
+                }
+              }
+            ]
+          }
+        },
+        {
+          "type": "deadline",
+          "data": {
+            "commands": [
+              {
+                "type": "named",
+                "data": {
+                  "name": "IntakeUntilFull"
+                }
+              },
+              {
+                "type": "path",
+                "data": {
+                  "pathName": "FerryAuto.1"
+                }
+              },
+              {
+                "type": "named",
+                "data": {
+                  "name": "Ferry OTM"
+                }
+              }
+            ]
+          }
+        },
+        {
+          "type": "path",
+          "data": {
+            "pathName": "FerryAuto.2"
+          }
+        },
+        {
+          "type": "deadline",
+          "data": {
+            "commands": [
+              {
+                "type": "path",
+                "data": {
+                  "pathName": "FerryAuto.3"
+                }
+              },
+              {
+                "type": "named",
+                "data": {
+                  "name": "Shoot On The Move"
+                }
+              }
+            ]
+          }
+        },
+        {
+          "type": "named",
+          "data": {
+            "name": "SOTM Until Empty"
+          }
+        }
+      ]
+    }
+  },
+  "resetOdom": true,
+  "folder": null,
+  "choreoAuto": true
+}
