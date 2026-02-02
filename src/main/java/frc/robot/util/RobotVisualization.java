@@ -15,6 +15,9 @@ import edu.wpi.first.math.util.Units;
 import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.Commands;
+import frc.robot.Constants.FieldConstants;
+import frc.robot.Constants.HoodConstants;
+import frc.robot.Constants.SimConstants;
 import frc.robot.Constants.TurretConstants;
 import frc.robot.subsystems.Hood;
 import frc.robot.subsystems.Shooter;
@@ -31,7 +34,9 @@ public class RobotVisualization {
   private Swerve swerve;
   private Shooter shooter;
 
-  private final List<FuelProjectile> activeShots = new ArrayList<>();
+  private static int fuelStored = 8;
+
+  private static List<FuelProjectile> activeShots = new ArrayList<>();
 
   public RobotVisualization(Turret turret, Hood hood, Swerve swerve, Shooter shooter) {
     this.turret = turret;
@@ -57,19 +62,19 @@ public class RobotVisualization {
 
   @Logged(name = "FuelPoses")
   public Pose3d[] getFuelPoses() {
-    return activeShots.stream().map(p -> p.getPose()).toArray(s -> new Pose3d[s]);
+    return activeShots.stream().map(p -> p.getPose()).toArray(p -> new Pose3d[p]);
   }
 
-  public void shootFuelOTM(ShootingParameters shootingParameters) {
+  @Logged(name = "FuelStored")
+  public int getFuelStored() {
+    return fuelStored;
+  }
+
+  public void basicShootFuel(ShootingParameters shootingParameters) {
 
     Pose3d robotPose = new Pose3d(swerve.getRobotPose());
 
-    ChassisSpeeds robotRelative = swerve.getChassisSpeeds();
-
-    ChassisSpeeds fieldRelative =
-        ChassisSpeeds.fromRobotRelativeSpeeds(
-            robotRelative, robotPose.getRotation().toRotation2d());
-    // ShotSolution shotSolution = shooter.getShotSolution();
+    ChassisSpeeds fieldSpeeds = swerve.getFieldSpeeds();
 
     Rotation2d turretYaw = Rotation2d.fromDegrees(shootingParameters.turretAngle().in(Degrees));
     Rotation2d hoodPitch = Rotation2d.fromDegrees(shootingParameters.hoodAngle().in(Degrees));
@@ -79,25 +84,17 @@ public class RobotVisualization {
 
     double exitVelocity = shootingParameters.shooterSpeed();
 
-    double vXInit = fieldRelative.vxMetersPerSecond;
-    double vYInit = fieldRelative.vyMetersPerSecond;
+    double vXInit = fieldSpeeds.vxMetersPerSecond;
+    double vYInit = fieldSpeeds.vyMetersPerSecond;
 
     double vXRot =
-        -fieldRelative.omegaRadiansPerSecond
-            * TurretConstants.robotToTurret.toTranslation2d().getY();
+        -fieldSpeeds.omegaRadiansPerSecond * TurretConstants.robotToTurret.toTranslation2d().getY();
     double vYRot =
-        fieldRelative.omegaRadiansPerSecond
-            * TurretConstants.robotToTurret.toTranslation2d().getX();
+        fieldSpeeds.omegaRadiansPerSecond * TurretConstants.robotToTurret.toTranslation2d().getX();
 
     double vX = exitVelocity * Math.cos(shotPitch) * Math.cos(shotYaw) + vXInit + vXRot;
     double vY = exitVelocity * Math.cos(shotPitch) * Math.sin(shotYaw) + vYInit + vYRot;
     double vZ = exitVelocity * Math.sin(shotPitch);
-
-    SmartDashboard.putNumber("Testing/vX", vX);
-    SmartDashboard.putNumber("Testing/vY", vY);
-    SmartDashboard.putNumber("Testing/vZ", vZ);
-    SmartDashboard.putNumber("Testing/hoodAngle", shootingParameters.hoodAngle().in(Degrees));
-    SmartDashboard.putNumber("Testing/exitVelocity", shootingParameters.shooterSpeed());
 
     Pose3d turretPose =
         robotPose.transformBy(new Transform3d(TurretConstants.robotToTurret, Rotation3d.kZero));
@@ -105,22 +102,29 @@ public class RobotVisualization {
     activeShots.add(new FuelProjectile(turretPose, vX, vY, vZ));
   }
 
-  public void projectileUpdaterSOTM() {
-    activeShots.forEach(FuelProjectile::update);
-    activeShots.removeIf(p -> !p.isActive());
-  }
-
-  public Command shootFuel() {
+  public Command shootFuelGatherData() {
     return Commands.runOnce(
             () -> {
               Pose3d robotPose = new Pose3d(swerve.getRobotPose());
 
-              ChassisSpeeds robotRelative = swerve.getChassisSpeeds();
+              ChassisSpeeds fieldSpeeds = swerve.getFieldSpeeds();
 
-              ChassisSpeeds fieldRelative =
-                  ChassisSpeeds.fromRobotRelativeSpeeds(
-                      robotRelative, robotPose.getRotation().toRotation2d());
-              ShotSolution shotSolution = shooter.getShotSolution();
+              double shotAngle =
+                  SmartDashboard.getNumber(
+                      "GatherData/Manual Shot Angle", HoodConstants.minAngle.in(Degrees));
+              double shotSpeed = SmartDashboard.getNumber("GatherData/Manual Shot Speed", 0);
+
+              ShotSolution shotSolution =
+                  new ShotSolution(Degrees.of(shotAngle), MetersPerSecond.of(shotSpeed));
+              Pose3d turretPose =
+                  robotPose.transformBy(
+                      new Transform3d(TurretConstants.robotToTurret, Rotation3d.kZero));
+
+              double turretDistance =
+                  turretPose
+                      .toPose2d()
+                      .getTranslation()
+                      .getDistance(AllianceUtil.getHubPose().getTranslation());
 
               Rotation2d turretYaw = Rotation2d.fromDegrees(turret.getTurretAngle().in(Degrees));
               Rotation2d hoodPitch = Rotation2d.fromDegrees(shotSolution.hoodAngle().in(Degrees));
@@ -130,43 +134,83 @@ public class RobotVisualization {
 
               double exitVelocity = shotSolution.exitVelocity().in(MetersPerSecond);
 
-              double vXInit = fieldRelative.vxMetersPerSecond;
-              double vYInit = fieldRelative.vyMetersPerSecond;
+              double vXInit = fieldSpeeds.vxMetersPerSecond;
+              double vYInit = fieldSpeeds.vyMetersPerSecond;
 
               double vXRot =
-                  -fieldRelative.omegaRadiansPerSecond
+                  -fieldSpeeds.omegaRadiansPerSecond
                       * TurretConstants.robotToTurret.toTranslation2d().getY();
               double vYRot =
-                  fieldRelative.omegaRadiansPerSecond
+                  fieldSpeeds.omegaRadiansPerSecond
                       * TurretConstants.robotToTurret.toTranslation2d().getX();
 
               double vX = exitVelocity * Math.cos(shotPitch) * Math.cos(shotYaw) + vXInit + vXRot;
               double vY = exitVelocity * Math.cos(shotPitch) * Math.sin(shotYaw) + vYInit + vYRot;
               double vZ = exitVelocity * Math.sin(shotPitch);
 
-              SmartDashboard.putNumber("Testing/vX", vX);
-              SmartDashboard.putNumber("Testing/vY", vY);
-              SmartDashboard.putNumber("Testing/vZ", vZ);
-              SmartDashboard.putNumber("Testing/hoodAngle", shotSolution.hoodAngle().in(Degrees));
-              SmartDashboard.putNumber(
-                  "Testing/exitVelocity", shotSolution.exitVelocity().in(MetersPerSecond));
-
-              Pose3d turretPose =
-                  robotPose.transformBy(
-                      new Transform3d(TurretConstants.robotToTurret, Rotation3d.kZero));
-
               activeShots.add(new FuelProjectile(turretPose, vX, vY, vZ));
+
+              SmartDashboard.putNumber("GatherData/Turret Distance", turretDistance);
+              SmartDashboard.putNumber("GatherData/Shot Angle", shotAngle);
+              SmartDashboard.putNumber("GatherData/Shot Speed", shotSpeed);
+
+              if (activeShots.size() > 0) {
+                double timeOfFlight =
+                    activeShots.get(activeShots.size() - 1).getTOF(FieldConstants.mainHubHeight);
+                SmartDashboard.putNumber("GatherData/TOF", timeOfFlight);
+              }
             })
-        .withName("ShootFuel");
+        .withName("ShootFuelGatherData");
   }
 
-  public Command projectileUpdater() {
-    return Commands.run(
-            () -> {
-              activeShots.forEach(FuelProjectile::update);
-              activeShots.removeIf(p -> !p.isActive());
-            })
-        .ignoringDisable(true)
-        .withName("ProjectileUpdater");
+  public void shootFuel(ShootingParameters shootingParameters) {
+
+    if (fuelStored < 1) return;
+
+    fuelStored--;
+
+    Pose3d robotPose = new Pose3d(swerve.getRobotPose());
+
+    ChassisSpeeds fieldSpeeds = swerve.getFieldSpeeds();
+
+    Pose3d turretPose =
+        robotPose.transformBy(new Transform3d(TurretConstants.robotToTurret, Rotation3d.kZero));
+
+    double shotYaw = shootingParameters.turretAngle().in(Radians);
+    double shotPitch = Radians.of(Math.PI / 2).minus(shootingParameters.hoodAngle()).in(Radians);
+    double exitVelocity = shootingParameters.shooterSpeed();
+
+    double fieldYaw = robotPose.getRotation().toRotation2d().getRadians() + shotYaw;
+
+    double vX =
+        exitVelocity * Math.cos(shotPitch) * Math.cos(fieldYaw) + fieldSpeeds.vxMetersPerSecond;
+
+    double vY =
+        exitVelocity * Math.cos(shotPitch) * Math.sin(fieldYaw) + fieldSpeeds.vyMetersPerSecond;
+
+    double vZ = exitVelocity * Math.sin(shotPitch);
+
+    FuelSim.getInstance().spawnFuel(turretPose.getTranslation(), new Translation3d(vX, vY, vZ));
+  }
+
+  public static void projectileUpdater() {
+    activeShots.forEach(FuelProjectile::update);
+    activeShots.removeIf(p -> !p.isActive());
+  }
+
+  public boolean canSimIntake() {
+    return fuelStored < SimConstants.maxCapacity;
+  }
+
+  public void simIntakeFuel() {
+    fuelStored++;
+  }
+
+  public boolean isEmpty() {
+    return fuelStored < 1;
+  }
+
+  public void addStartingFuel() {
+    fuelStored = 8;
   }
 }

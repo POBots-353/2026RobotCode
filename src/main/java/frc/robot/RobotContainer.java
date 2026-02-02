@@ -4,6 +4,8 @@
 
 package frc.robot;
 
+import static edu.wpi.first.units.Units.Inches;
+import static edu.wpi.first.units.Units.Meters;
 import static edu.wpi.first.units.Units.MetersPerSecond;
 
 import com.pathplanner.lib.auto.AutoBuilder;
@@ -13,7 +15,6 @@ import edu.wpi.first.math.geometry.Pose2d;
 import edu.wpi.first.wpilibj.smartdashboard.SendableChooser;
 import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 import edu.wpi.first.wpilibj2.command.Command;
-import edu.wpi.first.wpilibj2.command.CommandScheduler;
 import edu.wpi.first.wpilibj2.command.Commands;
 import edu.wpi.first.wpilibj2.command.button.CommandXboxController;
 import edu.wpi.first.wpilibj2.command.button.Trigger;
@@ -21,17 +22,18 @@ import edu.wpi.first.wpilibj2.command.sysid.SysIdRoutine.Direction;
 import frc.robot.Constants.FieldConstants;
 import frc.robot.Constants.OperatorConstants;
 import frc.robot.Constants.SwerveConstants;
-import frc.robot.Constants.TurretConstants;
 import frc.robot.commands.MoveToFuel;
 import frc.robot.commands.PhysicsStationaryShoot;
 import frc.robot.commands.ShootOnTheMove;
 import frc.robot.commands.TeleopSwerve;
 import frc.robot.generated.TunerConstants;
 import frc.robot.subsystems.Hood;
+import frc.robot.subsystems.Intake;
 import frc.robot.subsystems.Shooter;
 import frc.robot.subsystems.Swerve;
 import frc.robot.subsystems.Turret;
 import frc.robot.util.AllianceUtil;
+import frc.robot.util.FuelSim;
 import frc.robot.util.RobotVisualization;
 import frc.robot.util.SwerveTelemetry;
 import java.util.function.Supplier;
@@ -53,7 +55,11 @@ public class RobotContainer {
 
   private int ferryPoseIndex = 0;
   private final Supplier<Pose2d> ferryPoseSupplier =
-      () -> FieldConstants.blueFerryPoints.get(ferryPoseIndex);
+      () ->
+          FieldConstants.blueFerryPoints.stream()
+              .map(AllianceUtil::flipPose)
+              .toList()
+              .get(ferryPoseIndex);
 
   @Logged(name = "Swerve")
   private final Swerve swerve = TunerConstants.createDrivetrain();
@@ -67,11 +73,17 @@ public class RobotContainer {
   @Logged(name = "Shooter")
   private final Shooter shooter = new Shooter();
 
+  @Logged(name = "Intake")
+  private final Intake intake = new Intake();
+
   @Logged(name = "3D Visualization")
   private final RobotVisualization robotVisualization =
       new RobotVisualization(turret, hood, swerve, shooter);
 
   private final SwerveTelemetry swerveTelemetry = new SwerveTelemetry();
+
+  @Logged(name = "Fuel Sim")
+  private final FuelSim fuelInstance = FuelSim.getInstance();
 
   /** The container for the robot. Contains subsystems, OI devices, and commands. */
   public RobotContainer() {
@@ -81,12 +93,26 @@ public class RobotContainer {
     NamedCommands.registerCommand("Move To Fuel", new MoveToFuel(swerve).withTimeout(2));
     NamedCommands.registerCommand(
         "Shoot On The Move",
-        new ShootOnTheMove(swerve, turret, hood, shooter, ferryPoseSupplier, robotVisualization));
+        new ShootOnTheMove(
+            swerve, turret, hood, shooter, AllianceUtil::getHubPose, robotVisualization));
 
     NamedCommands.registerCommand(
         "Pathfind to Mid-Left Bumper", swerve.pathFindToPose(FieldConstants.midLBumperPose));
     NamedCommands.registerCommand(
         "Pathfind to Mid-Right Bumper", swerve.pathFindToPose(FieldConstants.midRBumperPose));
+
+    NamedCommands.registerCommand(
+        "FerryOTM",
+        new ShootOnTheMove(swerve, turret, hood, shooter, ferryPoseSupplier, robotVisualization));
+
+    NamedCommands.registerCommand(
+        "IntakeUntilFull", Commands.waitUntil(() -> !robotVisualization.canSimIntake()));
+
+    NamedCommands.registerCommand(
+        "SOTM Until Empty",
+        new ShootOnTheMove(
+                swerve, turret, hood, shooter, AllianceUtil::getHubPose, robotVisualization)
+            .until(() -> robotVisualization.isEmpty()));
 
     NamedCommands.registerCommand(
         "Shoot", Commands.run(() -> shooter.setSpeed(MetersPerSecond.of(1))).withTimeout(1));
@@ -102,9 +128,7 @@ public class RobotContainer {
 
     swerve.registerTelemetry(swerveTelemetry::telemeterize);
 
-    if (Robot.isSimulation()) {
-      CommandScheduler.getInstance().schedule(robotVisualization.projectileUpdater());
-    }
+    configureFuelSim();
   }
 
   /**
@@ -116,6 +140,37 @@ public class RobotContainer {
    * PS4} controllers or {@link edu.wpi.first.wpilibj2.command.button.CommandJoystick Flight
    * joysticks}.
    */
+  private void configureFuelSim() {
+    fuelInstance.spawnStartingFuel();
+    fuelInstance.registerRobot(
+        SwerveConstants.bumperWidth.in(Meters),
+        SwerveConstants.bumperLength.in(Meters),
+        SwerveConstants.bumperHeight.in(Meters),
+        swerve::getRobotPose,
+        swerve::getFieldSpeeds);
+
+    fuelInstance.registerIntake(
+        SwerveConstants.bumperLength.div(2).in(Meters),
+        SwerveConstants.bumperLength.div(2).plus(Inches.of(8)).in(Meters),
+        -SwerveConstants.bumperWidth.div(2).in(Meters),
+        SwerveConstants.bumperWidth.div(2).in(Meters),
+        () -> intake.isIntakeDeployed() && robotVisualization.canSimIntake(),
+        robotVisualization::simIntakeFuel);
+
+    fuelInstance.start();
+    SmartDashboard.putData(
+        Commands.runOnce(
+                () -> {
+                  FuelSim.getInstance().clearFuel();
+                  FuelSim.getInstance().spawnStartingFuel();
+                  robotVisualization.addStartingFuel();
+                  FuelSim.Hub.BLUE_HUB.resetScore();
+                  FuelSim.Hub.RED_HUB.resetScore();
+                })
+            .withName("Reset Fuel")
+            .ignoringDisable(true));
+  }
+
   private void configureDriverBindings() {
     Trigger slowMode = driverController.leftTrigger();
     swerve.setDefaultCommand(
@@ -132,7 +187,6 @@ public class RobotContainer {
             swerve));
 
     driverController.a().whileTrue(swerve.pathFindThroughTrench());
-    driverController.rightTrigger().onTrue(robotVisualization.shootFuel());
 
     turret.setDefaultCommand(turret.faceTarget(AllianceUtil::getHubPose, swerve::getRobotPose));
 
@@ -143,26 +197,21 @@ public class RobotContainer {
             robotVisualization,
             swerve::getRobotPose,
             AllianceUtil::getHubPose,
-            () -> FieldConstants.hubHeight));
+            () -> FieldConstants.mainHubHeight));
 
     driverController
-        .rightBumper()
+        .rightTrigger()
         .whileTrue(
             new ShootOnTheMove(
                 swerve, turret, hood, shooter, AllianceUtil::getHubPose, robotVisualization));
 
-    Trigger ferryMode = driverController.leftBumper();
+    Trigger ferryMode = driverController.rightBumper();
 
-    ferryMode.whileTrue(turret.faceTarget(ferryPoseSupplier, swerve::getRobotPose));
-
-    ferryMode.whileTrue(
-        new PhysicsStationaryShoot(
-            shooter,
-            hood,
-            robotVisualization,
-            swerve::getRobotPose,
-            ferryPoseSupplier,
-            () -> TurretConstants.robotToTurret.getMeasureZ()));
+    ferryMode
+        .and(driverController.rightTrigger())
+        .whileTrue(
+            new ShootOnTheMove(
+                swerve, turret, hood, shooter, ferryPoseSupplier, robotVisualization));
 
     driverController
         .y()

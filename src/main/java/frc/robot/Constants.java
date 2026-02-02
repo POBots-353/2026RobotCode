@@ -56,8 +56,17 @@ public final class Constants {
     public static final int kOperatorControllerPort = 1;
   }
 
+  public static class SimConstants {
+    public static final int maxCapacity = 30;
+    public static final double ballsPerSecond = 6.7;
+  }
+
   public static class SwerveConstants {
     public static final int pigeonID = 20;
+
+    public static final Distance bumperWidth = Inches.of(34);
+    public static final Distance bumperLength = Inches.of(34);
+    public static final Distance bumperHeight = Inches.of(7.5); // floor to top of bumperx
 
     public static final LinearVelocity maxTranslationalSpeed = FeetPerSecond.of(15);
     public static final LinearVelocity slowModeMaxTranslationalSpeed = FeetPerSecond.of(5);
@@ -174,7 +183,8 @@ public final class Constants {
         new Pose2d(5.6198601722717285, 5.5177741050720215, Rotation2d.kZero);
 
     // top of the plastic ring on the hub is 72 inches
-    public static final Distance hubHeight = Inches.of(72 - 10);
+    public static final Distance plasticHubHeight = Inches.of(72);
+    public static final Distance mainHubHeight = Inches.of(56.440945);
 
     public static final List<Pose2d> blueFerryPoints =
         List.of(

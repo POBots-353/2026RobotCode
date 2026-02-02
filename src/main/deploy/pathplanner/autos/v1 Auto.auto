@@ -30,24 +30,6 @@
           }
         },
         {
-          "type": "named",
-          "data": {
-            "name": "SOTM Until Empty"
-          }
-        },
-        {
-          "type": "path",
-          "data": {
-            "pathName": "Path3"
-          }
-        },
-        {
-          "type": "path",
-          "data": {
-            "pathName": "Path4"
-          }
-        },
-        {
           "type": "deadline",
           "data": {
             "commands": [

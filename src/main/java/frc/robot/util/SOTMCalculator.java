@@ -148,8 +148,6 @@ public class SOTMCalculator {
       double newShooterSpeed = shooterSpeedMap.get(newDistance);
 
       boolean hasConverged = Math.abs(newDistance - distance) < 0.005;
-      // boolean hasConverged = Math.abs(newDistance - distance) < 5.0;
-
       turretAngle = newTurretAngle;
       hoodAngle = newHoodAngle;
       shooterSpeed = newShooterSpeed;

@@ -11,7 +11,9 @@ import edu.wpi.first.math.filter.Debouncer;
 import edu.wpi.first.math.filter.LinearFilter;
 import edu.wpi.first.math.geometry.Pose2d;
 import edu.wpi.first.math.kinematics.ChassisSpeeds;
+import edu.wpi.first.wpilibj.Timer;
 import edu.wpi.first.wpilibj2.command.Command;
+import frc.robot.Constants.SimConstants;
 import frc.robot.subsystems.Hood;
 import frc.robot.subsystems.Shooter;
 import frc.robot.subsystems.Swerve;
@@ -45,6 +47,8 @@ public class ShootOnTheMove extends Command {
 
   private RobotVisualization robotVisualization;
 
+  private double startTime;
+
   public ShootOnTheMove(
       Swerve swerve,
       Turret turret,
@@ -70,35 +74,26 @@ public class ShootOnTheMove extends Command {
     accelXFilter.reset();
     accelYFilter.reset();
 
-    previousFieldSpeeds =
-        ChassisSpeeds.fromRobotRelativeSpeeds(
-            swerve.getChassisSpeeds(), swerve.getRobotPose().getRotation());
+    previousFieldSpeeds = swerve.getFieldSpeeds();
+    startTime = Timer.getFPGATimestamp();
   }
 
   // Called every time the scheduler runs while the command is scheduled.
   @Override
   public void execute() {
 
-    ChassisSpeeds robotRelativeChassisSpeeds = swerve.getChassisSpeeds();
+    ChassisSpeeds fieldSpeeds = swerve.getFieldSpeeds();
 
-    ChassisSpeeds fieldRelativeChassisSpeeds =
-        ChassisSpeeds.fromRobotRelativeSpeeds(
-            robotRelativeChassisSpeeds, swerve.getRobotPose().getRotation());
+    ChassisSpeeds fieldAcceleration = fieldSpeeds.minus(previousFieldSpeeds).div(0.020);
 
-    ChassisSpeeds fieldAcceleration =
-        fieldRelativeChassisSpeeds.minus(previousFieldSpeeds).div(0.020);
+    previousFieldSpeeds = fieldSpeeds;
 
     double fieldAccelX = accelXFilter.calculate(fieldAcceleration.vxMetersPerSecond);
     double fieldAccelY = accelYFilter.calculate(fieldAcceleration.vyMetersPerSecond);
 
     ShootingParameters shootingParameters =
         SOTMCalculator.getParameters(
-            swerve,
-            turret,
-            targetPoseSupplier.get(),
-            fieldAccelX,
-            fieldAccelY,
-            fieldRelativeChassisSpeeds);
+            swerve, turret, targetPoseSupplier.get(), fieldAccelX, fieldAccelY, fieldSpeeds);
 
     turret.setTargetAngle(shootingParameters.turretAngle());
 
@@ -110,12 +105,14 @@ public class ShootOnTheMove extends Command {
         turret.getTurretAngle().in(Degrees) - shootingParameters.turretAngle().in(Degrees);
     double hoodErrorDeg =
         hood.getHoodAngle().in(Degrees) - shootingParameters.hoodAngle().in(Degrees);
-
     // if (turretSetPointDebouncer.calculate(Math.abs(turretErrorDeg) <= turretTolerance)
     //     && hoodSetPointDebouncer.calculate(Math.abs(hoodErrorDeg) <= hoodTolerance)
     //     && shooterDebouncer.calculate(shooterAtSetPoint)) {
-    robotVisualization.shootFuelOTM(shootingParameters);
-    robotVisualization.projectileUpdater();
+
+    if ((Timer.getFPGATimestamp() - startTime) > 1 / SimConstants.ballsPerSecond) {
+      robotVisualization.shootFuel(shootingParameters);
+      startTime = Timer.getFPGATimestamp();
+    }
     // } else {
     //   // indexer.stop();
     // }

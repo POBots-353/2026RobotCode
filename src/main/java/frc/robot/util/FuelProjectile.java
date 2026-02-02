@@ -4,8 +4,11 @@
 
 package frc.robot.util;
 
+import static edu.wpi.first.units.Units.Meters;
+
 import edu.wpi.first.math.geometry.Pose3d;
 import edu.wpi.first.math.geometry.Rotation3d;
+import edu.wpi.first.units.measure.Distance;
 import edu.wpi.first.wpilibj.Timer;
 
 /** Add your docs here. */
@@ -46,6 +49,16 @@ public class FuelProjectile {
     if (currentPose.getZ() <= 0.0 || t > 3.0) {
       active = false;
     }
+  }
+
+  public double getTOF(Distance targetHeight) {
+
+    double dH = targetHeight.in(Meters) - startPose.getZ();
+
+    double t1 = (-vZ + Math.sqrt(vZ * vZ - 4 * 0.5 * g * -dH)) / g;
+    double t2 = (-vZ - Math.sqrt(vZ * vZ - 4 * 0.5 * g * -dH)) / g;
+
+    return Math.max(t1, t2);
   }
 
   public Pose3d getPose() {

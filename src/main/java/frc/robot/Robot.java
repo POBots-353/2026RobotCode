@@ -18,6 +18,7 @@ import edu.wpi.first.wpilibj.util.WPILibVersion;
 import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.CommandScheduler;
 import frc.robot.util.AllianceUtil;
+import frc.robot.util.FuelSim;
 import frc.robot.util.LogUtil;
 import java.lang.management.GarbageCollectorMXBean;
 import java.lang.management.ManagementFactory;
@@ -30,6 +31,8 @@ import java.util.List;
  */
 public class Robot extends TimedRobot {
   private Command m_autonomousCommand;
+
+  private double autoStartTime = 0;
 
   @Logged(name = "Robot")
   private final RobotContainer m_robotContainer;
@@ -84,6 +87,9 @@ public class Robot extends TimedRobot {
 
     CommandScheduler.getInstance()
         .schedule(PathfindingCommand.warmupCommand().withName("Pathfinding Warmup"));
+
+    // SmartDashboard.putNumber("GatherData/Manual Shot Angle", HoodConstants.minAngle.in(Degrees));
+    // SmartDashboard.putNumber("GatherData/Manual Shot Speed", 0);
   }
 
   /**
@@ -130,6 +136,8 @@ public class Robot extends TimedRobot {
   public void autonomousInit() {
     m_autonomousCommand = m_robotContainer.getAutonomousCommand();
 
+    autoStartTime = Timer.getFPGATimestamp();
+
     // schedule the autonomous command (example)
     if (m_autonomousCommand != null) {
       CommandScheduler.getInstance().schedule(m_autonomousCommand);
@@ -138,7 +146,9 @@ public class Robot extends TimedRobot {
 
   /** This function is called periodically during autonomous. */
   @Override
-  public void autonomousPeriodic() {}
+  public void autonomousPeriodic() {
+    SmartDashboard.putNumber("AutoTimeLeft", 20 - (Timer.getFPGATimestamp() - autoStartTime));
+  }
 
   @Override
   public void teleopInit() {
@@ -167,11 +177,20 @@ public class Robot extends TimedRobot {
 
   /** This function is called once when the robot is first started up. */
   @Override
-  public void simulationInit() {}
+  public void simulationInit() {
+    FuelSim.Hub.RED_HUB.resetScore();
+    FuelSim.Hub.BLUE_HUB.resetScore();
+  }
 
   /** This function is called periodically whilst in simulation. */
   @Override
-  public void simulationPeriodic() {}
+  public void simulationPeriodic() {
+    // RobotVisualization.projectileUpdater();
+    FuelSim.getInstance().updateSim();
+
+    SmartDashboard.putNumber("Red Alliance Score", FuelSim.Hub.RED_HUB.getScore());
+    SmartDashboard.putNumber("Blue Alliance Score", FuelSim.Hub.BLUE_HUB.getScore());
+  }
 
   private static final class GcStatsCollector {
     private List<GarbageCollectorMXBean> gcBeans = ManagementFactory.getGarbageCollectorMXBeans();

@@ -52,6 +52,12 @@ public class Intake extends SubsystemBase {
         .withName("Intake working");
   }
 
+  public boolean isIntakeDeployed() {
+
+    // return armMotor.getPosition() > armDownPositionTolerance ? true : false;
+    return true; // FOR TESTING IN SIM
+  }
+
   @Override
   public void periodic() {
     // This method will be called once per scheduler run

@@ -9,9 +9,12 @@ import static edu.wpi.first.units.Units.Meters;
 import static edu.wpi.first.units.Units.MetersPerSecond;
 
 import edu.wpi.first.math.geometry.Pose2d;
+import edu.wpi.first.math.geometry.Rotation2d;
+import edu.wpi.first.math.geometry.Transform2d;
 import edu.wpi.first.units.measure.Distance;
 import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 import edu.wpi.first.wpilibj2.command.Command;
+import frc.robot.Constants.TurretConstants;
 import frc.robot.subsystems.Hood;
 import frc.robot.subsystems.Shooter;
 import frc.robot.util.HoodShotCalculator;
@@ -24,7 +27,6 @@ https://docs.wpilib.org/en/stable/docs/software/commandbased/organizing-command-
 public class PhysicsStationaryShoot extends Command {
   private final Shooter shooter;
   private final Hood hood;
-  private final RobotVisualization robotVisualization;
   private final Supplier<Pose2d> robotPose;
   private final Supplier<Pose2d> targetPose;
   private final Supplier<Distance> targetHeight;
@@ -38,7 +40,6 @@ public class PhysicsStationaryShoot extends Command {
       Supplier<Distance> targetHeight) {
     this.shooter = shooter;
     this.hood = hood;
-    this.robotVisualization = robotVisualization;
     this.robotPose = robotPose;
     this.targetPose = targetPose;
     this.targetHeight = targetHeight;
@@ -52,13 +53,19 @@ public class PhysicsStationaryShoot extends Command {
   // Called every time the scheduler runs while the command is scheduled.
   @Override
   public void execute() {
+
+    Pose2d turretPose =
+        robotPose
+            .get()
+            .transformBy(
+                new Transform2d(TurretConstants.robotToTurret.toTranslation2d(), Rotation2d.kZero));
+
     Distance distance =
-        Meters.of(robotPose.get().getTranslation().getDistance(targetPose.get().getTranslation()));
+        Meters.of(turretPose.getTranslation().getDistance(targetPose.get().getTranslation()));
     ShotSolution solution =
         HoodShotCalculator.solveShot(distance, targetHeight.get(), shooter.getExitVelocity());
     shooter.logSolution(solution);
     hood.setTargetAngle(solution.hoodAngle());
-    robotVisualization.projectileUpdater();
 
     SmartDashboard.putNumber("TESTING/Distance", distance.in(Meters));
     SmartDashboard.putNumber("TESTING/Angle", solution.hoodAngle().in(Degrees));
