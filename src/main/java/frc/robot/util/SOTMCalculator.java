@@ -24,36 +24,59 @@ public class SOTMCalculator {
   public static InterpolatingDoubleTreeMap timeOfFlightMap = new InterpolatingDoubleTreeMap();
 
   static {
-    hoodAngleMap.put(2.9, Rotation2d.fromDegrees(21.448));
-    hoodAngleMap.put(3.339, Rotation2d.fromDegrees(21.448));
-    hoodAngleMap.put(2.614, Rotation2d.fromDegrees(21.448));
-    hoodAngleMap.put(2.598, Rotation2d.fromDegrees(21.448));
-    hoodAngleMap.put(3.520, Rotation2d.fromDegrees(21.448));
-    hoodAngleMap.put(6.768, Rotation2d.fromDegrees(28.994));
-    hoodAngleMap.put(2.865, Rotation2d.fromDegrees(21.488));
-    hoodAngleMap.put(4.497, Rotation2d.fromDegrees(21.448));
-    hoodAngleMap.put(5.907, Rotation2d.fromDegrees(23.473));
-    hoodAngleMap.put(7.469, Rotation2d.fromDegrees(36.911)); // Random values distance, Degrees
+    hoodAngleMap.put(1.681, Rotation2d.fromDegrees(21.448));
+    hoodAngleMap.put(2.016, Rotation2d.fromDegrees(21.972));
+    hoodAngleMap.put(2.338, Rotation2d.fromDegrees(22.648));
+    hoodAngleMap.put(2.665, Rotation2d.fromDegrees(24.122));
+    hoodAngleMap.put(3.034, Rotation2d.fromDegrees(25.658));
+    hoodAngleMap.put(3.363, Rotation2d.fromDegrees(26.333));
+    hoodAngleMap.put(3.711, Rotation2d.fromDegrees(27.562));
+    hoodAngleMap.put(4.061, Rotation2d.fromDegrees(29.036));
+    hoodAngleMap.put(4.324, Rotation2d.fromDegrees(29.835));
+    hoodAngleMap.put(4.619, Rotation2d.fromDegrees(30.449));
+    hoodAngleMap.put(5.010, Rotation2d.fromDegrees(32.046));
+    hoodAngleMap.put(5.366, Rotation2d.fromDegrees(33.275));
+    hoodAngleMap.put(5.610, Rotation2d.fromDegrees(34.319));
+    hoodAngleMap.put(6.051, Rotation2d.fromDegrees(35.794));
+    hoodAngleMap.put(6.369, Rotation2d.fromDegrees(36.408));
+    hoodAngleMap.put(6.704, Rotation2d.fromDegrees(37.002));
+    hoodAngleMap.put(7.022, Rotation2d.fromDegrees(36.531));
 
-    shooterSpeedMap.put(2.906, 7.112);
-    shooterSpeedMap.put(3.339, 7.523);
-    shooterSpeedMap.put(2.614, 6.825);
-    shooterSpeedMap.put(2.598, 6.810);
-    shooterSpeedMap.put(3.520, 7.689);
-    shooterSpeedMap.put(6.768, 9.353);
-    shooterSpeedMap.put(2.865, 7.080);
-    shooterSpeedMap.put(4.497, 8.539);
-    shooterSpeedMap.put(5.907, 9.353);
-    shooterSpeedMap.put(7.469, 9.353);
-    // random values (Distance, MPS)
+    shooterSpeedMap.put(1.681, 5.795);
+    shooterSpeedMap.put(2.016, 5.940);
+    shooterSpeedMap.put(2.338, 6.229);
+    shooterSpeedMap.put(2.665, 6.422);
+    shooterSpeedMap.put(3.034, 6.711);
+    shooterSpeedMap.put(3.363, 6.903);
+    shooterSpeedMap.put(3.711, 7.096);
+    shooterSpeedMap.put(4.061, 7.337);
+    shooterSpeedMap.put(4.324, 7.529);
+    shooterSpeedMap.put(4.619, 7.674);
+    shooterSpeedMap.put(5.010, 7.915);
+    shooterSpeedMap.put(5.366, 8.156);
+    shooterSpeedMap.put(5.610, 8.252);
+    shooterSpeedMap.put(6.051, 8.445);
+    shooterSpeedMap.put(6.369, 8.637);
+    shooterSpeedMap.put(6.704, 8.830);
+    shooterSpeedMap.put(7.022, 9.023);
 
-    timeOfFlightMap.put(2.0, 1.09);
-    timeOfFlightMap.put(4.135, 1.53);
-    timeOfFlightMap.put(3.210, 1.35);
-    timeOfFlightMap.put(4.535, 1.63);
-    timeOfFlightMap.put(3.53, 1.45);
-    timeOfFlightMap.put(8.057, 2.13);
-    timeOfFlightMap.put(1.33, 0.91); // random values (Distance, seconds)
+    timeOfFlightMap.put(1.695, 0.893);
+    timeOfFlightMap.put(2.016, 0.924);
+    timeOfFlightMap.put(2.338, 0.985);
+    timeOfFlightMap.put(2.665, 1.013);
+    timeOfFlightMap.put(3.034, 1.059);
+    timeOfFlightMap.put(3.363, 1.093);
+    timeOfFlightMap.put(3.711, 1.118);
+    timeOfFlightMap.put(4.061, 1.147);
+    timeOfFlightMap.put(4.324, 1.175);
+    timeOfFlightMap.put(4.619, 1.195);
+    timeOfFlightMap.put(5.010, 1.216);
+    timeOfFlightMap.put(5.366, 1.242);
+    timeOfFlightMap.put(5.610, 1.241);
+    timeOfFlightMap.put(6.051, 1.249);
+    timeOfFlightMap.put(6.365, 1.273);
+    timeOfFlightMap.put(6.704, 1.295);
+    timeOfFlightMap.put(7.022, 1.341);
   }
 
   private static Translation2d robotToTurret2d = TurretConstants.robotToTurret.toTranslation2d();
@@ -68,10 +91,15 @@ public class SOTMCalculator {
       double fieldAccelX,
       double fieldAccelY,
       ChassisSpeeds fieldChassisSpeeds) {
-    Pose2d targetPose = target;
-    Translation2d turretPose = swerve.getRobotPose().getTranslation().plus(robotToTurret2d);
 
-    double robotAngle = swerve.getRobotPose().getRotation().getRadians();
+    Pose2d targetPose = target;
+
+    Pose2d robotPose = swerve.getRobotPose();
+
+    Translation2d turretPose =
+        robotPose.getTranslation().plus(robotToTurret2d.rotateBy(robotPose.getRotation()));
+
+    double robotAngle = robotPose.getRotation().getRadians();
     double turretVelocityX =
         fieldChassisSpeeds.vxMetersPerSecond
             + fieldChassisSpeeds.omegaRadiansPerSecond
@@ -98,36 +126,40 @@ public class SOTMCalculator {
 
     SmartDashboard.putNumber("SOTM/distance", distance);
 
-    // for (int i = 0; i < 5; i++) {
-    double offsetX = timeOfFlight * (turretVelocityX 
-    // + fieldAccelX * accelTime.in(Seconds) TS IS BROKEN BRO
-    );
-    double offsetY = timeOfFlight * (turretVelocityY 
-    // + fieldAccelY * accelTime.in(Seconds) ACCELERATION DOES NOT WORK
-    );
+    for (int i = 0; i < 5; i++) {
+      double offsetX =
+          timeOfFlight
+              * (turretVelocityX
+              // + fieldAccelX * accelTime.in(Seconds)
+              );
+      double offsetY =
+          timeOfFlight
+              * (turretVelocityY
+              // + fieldAccelY * accelTime.in(Seconds)
+              );
 
-    lookAheadPosition = targetPose.getTranslation().minus(new Translation2d(offsetX, offsetY));
+      lookAheadPosition = targetPose.getTranslation().minus(new Translation2d(offsetX, offsetY));
 
-    double newDistance = lookAheadPosition.getDistance(turretPose);
+      double newDistance = lookAheadPosition.getDistance(turretPose);
 
-    timeOfFlight = timeOfFlightMap.get(newDistance);
-    Angle newTurretAngle = turret.angleToFaceTarget(lookAheadPosition, swerve.getRobotPose());
-    Rotation2d newHoodAngle = hoodAngleMap.get(newDistance);
-    double newShooterSpeed = shooterSpeedMap.get(newDistance);
+      timeOfFlight = timeOfFlightMap.get(newDistance);
+      Angle newTurretAngle = turret.angleToFaceTarget(lookAheadPosition, swerve.getRobotPose());
+      Rotation2d newHoodAngle = hoodAngleMap.get(newDistance);
+      double newShooterSpeed = shooterSpeedMap.get(newDistance);
 
-    // boolean hasConverged = Math.abs(newDistance - distance) < 0.00005;
-    boolean hasConverged = Math.abs(newDistance - distance) < 5.0;
+      boolean hasConverged = Math.abs(newDistance - distance) < 0.005;
+      // boolean hasConverged = Math.abs(newDistance - distance) < 5.0;
 
-    turretAngle = newTurretAngle;
-    hoodAngle = newHoodAngle;
-    shooterSpeed = newShooterSpeed;
+      turretAngle = newTurretAngle;
+      hoodAngle = newHoodAngle;
+      shooterSpeed = newShooterSpeed;
 
-    turretToTargetDistance = newDistance;
+      turretToTargetDistance = newDistance;
 
-    // if (hasConverged) {
-    //   break;
-    // }
-    // }
+      if (hasConverged) {
+        break;
+      }
+    }
     return new ShootingParameters(shooterSpeed, turretAngle, hoodAngle.getMeasure());
   }
 }
