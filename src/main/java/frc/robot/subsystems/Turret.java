@@ -235,9 +235,9 @@ public class Turret extends SubsystemBase {
   @Override
   public void periodic() {
     turretPosition.refresh();
-    SmartDashboard.putNumber("TwoEncoder Angle", getAbsoluteTurretPosition().in(Degrees));
-    SmartDashboard.putNumber("Turret Angle", turretPosition.getValue().in(Degrees));
-    SmartDashboard.putBoolean("Drifted too much", hasDriftedTooMuch(Degrees.of(5)));
+    SmartDashboard.putNumber("Turret/TwoEncoder Angle", getAbsoluteTurretPosition().in(Degrees));
+    SmartDashboard.putNumber("Turret/Turret Angle", turretPosition.getValue().in(Degrees));
+    SmartDashboard.putBoolean("Turret/Drifted too much", hasDriftedTooMuch(Degrees.of(5)));
   }
 
   @Override

@@ -62,8 +62,6 @@ public final class Constants {
   }
 
   public static class SwerveConstants {
-    public static final int pigeonID = 20;
-
     public static final Distance bumperWidth = Inches.of(34);
     public static final Distance bumperLength = Inches.of(34);
     public static final Distance bumperHeight = Inches.of(7.5); // floor to top of bumperx

@@ -4,7 +4,6 @@ import static edu.wpi.first.units.Units.*;
 
 import com.ctre.phoenix6.SignalLogger;
 import com.ctre.phoenix6.Utils;
-import com.ctre.phoenix6.hardware.Pigeon2;
 import com.ctre.phoenix6.swerve.SwerveDrivetrainConstants;
 import com.ctre.phoenix6.swerve.SwerveModule.DriveRequestType;
 import com.ctre.phoenix6.swerve.SwerveModule.SteerRequestType;
@@ -47,7 +46,6 @@ import edu.wpi.first.wpilibj2.command.Subsystem;
 import edu.wpi.first.wpilibj2.command.sysid.SysIdRoutine;
 import frc.robot.Constants.AutoConstants;
 import frc.robot.Constants.FieldConstants;
-import frc.robot.Constants.SwerveConstants;
 import frc.robot.Constants.TurretConstants;
 import frc.robot.Constants.VisionConstants;
 import frc.robot.generated.TunerConstants.TunerSwerveDrivetrain;
@@ -109,7 +107,6 @@ public class Swerve extends TunerSwerveDrivetrain implements Subsystem {
 
   private Timer timer = new Timer();
 
-  private Pigeon2 gyro = new Pigeon2(SwerveConstants.pigeonID);
   private double targetFuelYaw = 0;
   public Rotation2d desiredFuelRotation = Rotation2d.k180deg;
 
@@ -361,7 +358,7 @@ public class Swerve extends TunerSwerveDrivetrain implements Subsystem {
                         fieldOriented.withVelocityX(-0.1).withVelocityY(0).withRotationalRate(0));
                   }
                 }))
-        .until(() -> timer.hasElapsed(0.5) && gyro.getPitch().getValueAsDouble() == 0);
+        .until(() -> timer.hasElapsed(0.5) && getPigeon2().getPitch().getValueAsDouble() == 0);
   }
 
   public Command pathFindThroughTrench() {
@@ -398,6 +395,7 @@ public class Swerve extends TunerSwerveDrivetrain implements Subsystem {
 
   @Override
   public void periodic() {
+    double startTime = Timer.getFPGATimestamp();
     stateCache = getState();
 
     latestArducamLeftResult = arducamLeft.getAllUnreadResults();
@@ -454,6 +452,9 @@ public class Swerve extends TunerSwerveDrivetrain implements Subsystem {
                 m_hasAppliedOperatorPerspective = true;
               });
     }
+
+    double codeRuntime = (Timer.getFPGATimestamp() - startTime) * 1000.0;
+    SmartDashboard.putNumber("Swerve/Periodic Runtime", codeRuntime);
   }
 
   @Override

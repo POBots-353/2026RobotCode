@@ -114,17 +114,13 @@ public class SOTMCalculator {
 
     double turretToTargetDistance = lookAheadPosition.getDistance(turretPose);
 
-    Angle turretAngle = turret.angleToFaceTarget(lookAheadPosition, swerve.getRobotPose());
-    Rotation2d hoodAngle = hoodAngleMap.get(turretToTargetDistance);
-    double shooterSpeed = shooterSpeedMap.get(turretToTargetDistance);
-
     double timeOfFlight = timeOfFlightMap.get(turretToTargetDistance);
 
     double distance = lookAheadPosition.getDistance(turretPose);
 
     SmartDashboard.putNumber("SOTM/distance", distance);
 
-    for (int i = 0; i < 5; i++) {
+    for (int i = 0; i < 20; i++) {
       double offsetX =
           timeOfFlight
               * (turretVelocityX
@@ -141,14 +137,8 @@ public class SOTMCalculator {
       double newDistance = lookAheadPosition.getDistance(turretPose);
 
       timeOfFlight = timeOfFlightMap.get(newDistance);
-      Angle newTurretAngle = turret.angleToFaceTarget(lookAheadPosition, swerve.getRobotPose());
-      Rotation2d newHoodAngle = hoodAngleMap.get(newDistance);
-      double newShooterSpeed = shooterSpeedMap.get(newDistance);
 
       boolean hasConverged = Math.abs(newDistance - distance) < 0.005;
-      turretAngle = newTurretAngle;
-      hoodAngle = newHoodAngle;
-      shooterSpeed = newShooterSpeed;
 
       turretToTargetDistance = newDistance;
 
@@ -156,6 +146,11 @@ public class SOTMCalculator {
         break;
       }
     }
+
+    Angle turretAngle = turret.angleToFaceTarget(lookAheadPosition, swerve.getRobotPose());
+    Rotation2d hoodAngle = hoodAngleMap.get(distance);
+    double shooterSpeed = shooterSpeedMap.get(distance);
+
     return new ShootingParameters(shooterSpeed, turretAngle, hoodAngle.getMeasure());
   }
 }
