@@ -7,6 +7,7 @@ package frc.robot;
 import static edu.wpi.first.units.Units.Degrees;
 import static edu.wpi.first.units.Units.FeetPerSecond;
 import static edu.wpi.first.units.Units.Inches;
+import static edu.wpi.first.units.Units.Rotations;
 import static edu.wpi.first.units.Units.RotationsPerSecond;
 import static edu.wpi.first.units.Units.RotationsPerSecondPerSecond;
 import static edu.wpi.first.units.Units.Seconds;
@@ -58,7 +59,7 @@ public final class Constants {
 
   public static class SimConstants {
     public static final int maxCapacity = 30;
-    public static final double ballsPerSecond = 6.7;
+    public static final double fuelsPerSecond = 6.7;
   }
 
   public static class SwerveConstants {
@@ -89,24 +90,68 @@ public final class Constants {
     public static final double steerKA = 0.0;
   }
 
-  public static class intakeConstants {
-    public static final int armID = 15;
-    public static final int wheelID = 16;
-    public static final int beamID = 17;
-    public static final int joystickID = 18;
+  public static class IntakeConstants {
+    public static final int armMainID = 15;
+    public static final int armFollowerID = 16;
+    public static final int intakeID = 17;
+    public static final int armEncoderID = 18;
 
-    public static final double voltagePreset = 0;
-    /*Gear value TBD || All values random */
-    public static final double gearRatio = 5.0;
-    public static final double roationUp = 10;
-    public static final double rotationDown = 0;
+    public static final double armGearRatio = 3.0;
 
-    public static final double speedUp = roationUp * gearRatio;
-    public static final double speedDown = rotationDown * gearRatio; /*gonna be 0 anyway */
-    public static final double slowUp = (rotationDown * gearRatio) / 2;
+    public static final Angle maxPosition = Rotations.of(1.0);
+    public static final Angle minPosition = Rotations.of(0.0);
 
-    public static final double upPosition = 0;
-    public static final double downPosition = 5;
+    public static final Angle downPosition = Rotations.of(1.0);
+    public static final Angle upPosition = Rotations.of(0.0);
+
+    public static final Angle armDownPositionTolerance = maxPosition.plus(minPosition).div(2);
+
+    public static final Angle armMagnetOffset = Rotations.of(0);
+
+    public static final double intakeSpeed = .353;
+
+    public static final MotionMagicConfigs motionMagicConfigs =
+        new MotionMagicConfigs()
+            .withMotionMagicCruiseVelocity(RotationsPerSecond.of(0))
+            .withMotionMagicAcceleration(RotationsPerSecondPerSecond.of(0));
+
+    public static final Slot0Configs slot0Configs =
+        new Slot0Configs()
+            .withKS(0.0)
+            .withKV(0.0)
+            .withKA(0.0)
+            .withKG(0.00)
+            .withKP(0.0)
+            .withKI(0.00)
+            .withKD(0.00)
+            .withStaticFeedforwardSign(StaticFeedforwardSignValue.UseVelocitySign);
+
+    public static final FeedbackConfigs feedbackConfigs =
+        new FeedbackConfigs().withSensorToMechanismRatio(armGearRatio);
+
+    public static final MotorOutputConfigs motorOutputConfigs =
+        new MotorOutputConfigs()
+            .withInverted(InvertedValue.CounterClockwise_Positive)
+            .withNeutralMode(NeutralModeValue.Brake);
+
+    public static final SoftwareLimitSwitchConfigs softwareLimitSwitchConfigs =
+        new SoftwareLimitSwitchConfigs()
+            .withForwardSoftLimitThreshold(maxPosition)
+            .withForwardSoftLimitEnable(true)
+            .withReverseSoftLimitThreshold(minPosition)
+            .withReverseSoftLimitEnable(true);
+
+    public static final CurrentLimitsConfigs currentLimitConfigs =
+        new CurrentLimitsConfigs().withSupplyCurrentLimit(45).withSupplyCurrentLimitEnable(true);
+
+    public static final TalonFXConfiguration armConfigs =
+        new TalonFXConfiguration()
+            .withCurrentLimits(currentLimitConfigs)
+            .withSlot0(slot0Configs)
+            .withMotionMagic(motionMagicConfigs)
+            .withFeedback(feedbackConfigs)
+            .withMotorOutput(motorOutputConfigs)
+            .withSoftwareLimitSwitch(softwareLimitSwitchConfigs);
   }
 
   public static class VisionConstants {
@@ -203,6 +248,9 @@ public final class Constants {
 
     public static final Angle MIN_ANGLE = Degrees.of(-360.0);
     public static final Angle MAX_ANGLE = Degrees.of(360.0);
+
+    public static final Angle encAMagnetOffset = Degrees.of(0);
+    public static final Angle encBMagnetOffset = Degrees.of(0);
 
     public static final MotionMagicConfigs motionMagicConfigs =
         new MotionMagicConfigs()

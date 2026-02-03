@@ -98,7 +98,7 @@ public class ShootOnTheMove extends Command {
 
     hood.setTargetAngle(shootingParameters.hoodAngle());
 
-    shooter.setGoalSpeed(MetersPerSecond.of(shootingParameters.shooterSpeed()));
+    shooter.setGoalSpeed(shootingParameters.shooterSpeed());
 
     double turretErrorDeg =
         turret.getTurretAngle().in(Degrees) - shootingParameters.turretAngle().in(Degrees);
@@ -107,7 +107,7 @@ public class ShootOnTheMove extends Command {
     // if (turretSetPointDebouncer.calculate(Math.abs(turretErrorDeg) <= turretTolerance)
     //     && hoodSetPointDebouncer.calculate(Math.abs(hoodErrorDeg) <= hoodTolerance)
     //     && shooterDebouncer.calculate(shooterAtSetPoint)) {
-    if ((Timer.getFPGATimestamp() - startTime) > 1 / SimConstants.ballsPerSecond) {
+    if ((Timer.getFPGATimestamp() - startTime) > 1 / SimConstants.fuelsPerSecond) {
       robotVisualization.shootFuel(shootingParameters);
       startTime = Timer.getFPGATimestamp();
     }

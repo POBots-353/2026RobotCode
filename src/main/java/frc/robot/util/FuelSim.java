@@ -1,6 +1,5 @@
 package frc.robot.util;
 
-import static edu.wpi.first.units.Units.Meters;
 import static edu.wpi.first.units.Units.MetersPerSecond;
 import static edu.wpi.first.units.Units.Radians;
 
@@ -14,7 +13,6 @@ import edu.wpi.first.math.geometry.Translation2d;
 import edu.wpi.first.math.geometry.Translation3d;
 import edu.wpi.first.math.kinematics.ChassisSpeeds;
 import edu.wpi.first.units.measure.Angle;
-import edu.wpi.first.units.measure.Distance;
 import edu.wpi.first.units.measure.LinearVelocity;
 import java.util.ArrayList;
 import java.util.function.BooleanSupplier;
@@ -424,8 +422,8 @@ public class FuelSim {
   }
 
   /** Enables accounting for drag force in physics step * */
-  public void enableAirResistance() {
-    simulateAirResistance = true;
+  public void toggleAirResistance(boolean toggle) {
+    simulateAirResistance = toggle;
   }
 
   /**
@@ -507,21 +505,19 @@ public class FuelSim {
    * @throws IllegalStateException if robot is not registered
    */
   public void launchFuel(
-      LinearVelocity launchVelocity, Angle hoodAngle, Angle turretYaw, Distance launchHeight) {
+      LinearVelocity launchVelocity, Angle shotAngle, Angle turretYaw, Translation3d turretOffset) {
     if (robotPoseSupplier == null || robotFieldSpeedsSupplier == null) {
       throw new IllegalStateException("Robot must be registered before launching fuel.");
     }
 
     Pose3d launchPose =
         new Pose3d(this.robotPoseSupplier.get())
-            .plus(
-                new Transform3d(
-                    new Translation3d(Meters.zero(), Meters.zero(), launchHeight),
-                    Rotation3d.kZero));
+            .transformBy(new Transform3d(turretOffset, Rotation3d.kZero));
+
     ChassisSpeeds fieldSpeeds = this.robotFieldSpeedsSupplier.get();
 
-    double horizontalVel = Math.cos(hoodAngle.in(Radians)) * launchVelocity.in(MetersPerSecond);
-    double verticalVel = Math.sin(hoodAngle.in(Radians)) * launchVelocity.in(MetersPerSecond);
+    double horizontalVel = Math.cos(shotAngle.in(Radians)) * launchVelocity.in(MetersPerSecond);
+    double verticalVel = Math.sin(shotAngle.in(Radians)) * launchVelocity.in(MetersPerSecond);
     double xVel = horizontalVel * Math.cos(turretYaw.in(Radians));
     double yVel = horizontalVel * Math.sin(turretYaw.in(Radians));
 

@@ -172,6 +172,8 @@ public class RobotContainer {
                 })
             .withName("Reset Fuel")
             .ignoringDisable(true));
+
+    SmartDashboard.putBoolean("Air Resistance Toggle", false);
   }
 
   private void configureDriverBindings() {

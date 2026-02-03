@@ -71,6 +71,7 @@ public class Turret extends SubsystemBase {
             new CANcoderConfiguration()
                 .withMagnetSensor(
                     new MagnetSensorConfigs()
+                        .withMagnetOffset(TurretConstants.encAMagnetOffset)
                         .withSensorDirection(SensorDirectionValue.CounterClockwise_Positive)));
 
     encoderB
@@ -79,6 +80,7 @@ public class Turret extends SubsystemBase {
             new CANcoderConfiguration()
                 .withMagnetSensor(
                     new MagnetSensorConfigs()
+                        .withMagnetOffset(TurretConstants.encBMagnetOffset)
                         .withSensorDirection(SensorDirectionValue.CounterClockwise_Positive)));
 
     turretMotor.setPosition(getAbsoluteTurretPosition().in(Rotations));

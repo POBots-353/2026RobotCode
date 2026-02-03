@@ -147,7 +147,8 @@ public class Robot extends TimedRobot {
   /** This function is called periodically during autonomous. */
   @Override
   public void autonomousPeriodic() {
-    SmartDashboard.putNumber("AutoTimeLeft", 20 - (Timer.getFPGATimestamp() - autoStartTime));
+    SmartDashboard.putNumber(
+        "AutoTimeLeft", Math.max(20 - (Timer.getFPGATimestamp() - autoStartTime), 0));
   }
 
   @Override
@@ -186,7 +187,10 @@ public class Robot extends TimedRobot {
   @Override
   public void simulationPeriodic() {
     // RobotVisualization.projectileUpdater();
+
     FuelSim.getInstance().updateSim();
+    FuelSim.getInstance()
+        .toggleAirResistance(SmartDashboard.getBoolean("Air Resistance Toggle", false));
 
     SmartDashboard.putNumber("Red Alliance Score", FuelSim.Hub.RED_HUB.getScore());
     SmartDashboard.putNumber("Blue Alliance Score", FuelSim.Hub.BLUE_HUB.getScore());

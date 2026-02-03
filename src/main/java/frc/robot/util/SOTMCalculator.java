@@ -1,5 +1,6 @@
 package frc.robot.util;
 
+import static edu.wpi.first.units.Units.MetersPerSecond;
 import static edu.wpi.first.units.Units.Seconds;
 
 import edu.wpi.first.math.geometry.Pose2d;
@@ -10,6 +11,7 @@ import edu.wpi.first.math.interpolation.InterpolatingTreeMap;
 import edu.wpi.first.math.interpolation.InverseInterpolator;
 import edu.wpi.first.math.kinematics.ChassisSpeeds;
 import edu.wpi.first.units.measure.Angle;
+import edu.wpi.first.units.measure.LinearVelocity;
 import edu.wpi.first.units.measure.Time;
 import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 import frc.robot.Constants.TurretConstants;
@@ -81,7 +83,7 @@ public class SOTMCalculator {
   private static Translation2d robotToTurret2d = TurretConstants.robotToTurret.toTranslation2d();
   public static Time accelTime = Seconds.of(0.1353);
 
-  public record ShootingParameters(double shooterSpeed, Angle turretAngle, Angle hoodAngle) {}
+  public record ShootingParameters(LinearVelocity shooterSpeed, Angle turretAngle, Angle hoodAngle) {}
 
   public static ShootingParameters getParameters(
       Swerve swerve,
@@ -116,9 +118,7 @@ public class SOTMCalculator {
 
     double timeOfFlight = timeOfFlightMap.get(turretToTargetDistance);
 
-    double distance = lookAheadPosition.getDistance(turretPose);
-
-    SmartDashboard.putNumber("SOTM/distance", distance);
+    SmartDashboard.putNumber("SOTM/distance", turretToTargetDistance);
 
     for (int i = 0; i < 20; i++) {
       double offsetX =
@@ -138,7 +138,7 @@ public class SOTMCalculator {
 
       timeOfFlight = timeOfFlightMap.get(newDistance);
 
-      boolean hasConverged = Math.abs(newDistance - distance) < 0.005;
+      boolean hasConverged = Math.abs(newDistance - turretToTargetDistance) < 0.005;
 
       turretToTargetDistance = newDistance;
 
@@ -148,8 +148,8 @@ public class SOTMCalculator {
     }
 
     Angle turretAngle = turret.angleToFaceTarget(lookAheadPosition, swerve.getRobotPose());
-    Rotation2d hoodAngle = hoodAngleMap.get(distance);
-    double shooterSpeed = shooterSpeedMap.get(distance);
+    Rotation2d hoodAngle = hoodAngleMap.get(turretToTargetDistance);
+    LinearVelocity shooterSpeed = MetersPerSecond.of(shooterSpeedMap.get(turretToTargetDistance));
 
     return new ShootingParameters(shooterSpeed, turretAngle, hoodAngle.getMeasure());
   }

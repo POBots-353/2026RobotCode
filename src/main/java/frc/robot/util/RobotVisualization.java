@@ -1,6 +1,7 @@
 package frc.robot.util;
 
 import static edu.wpi.first.units.Units.Degrees;
+import static edu.wpi.first.units.Units.MetersPerSecond;
 import static edu.wpi.first.units.Units.Radians;
 
 import edu.wpi.first.epilogue.Logged;
@@ -99,12 +100,21 @@ public class RobotVisualization {
     if (fuelStored < 1) return;
 
     fuelStored--;
+
     FuelSim.getInstance()
         .launchFuel(
-            shooter.getGoalSpeed(),
-            Radians.of(Math.PI / 2).minus(hood.getHoodAngle()),
-            swerve.getRobotPose().getRotation().getMeasure().plus(turret.getTurretAngle()),
-            TurretConstants.robotToTurret.getMeasureZ());
+            shootingParameters.shooterSpeed(),
+            Radians.of(Math.PI / 2).minus(shootingParameters.hoodAngle()),
+            swerve.getRobotPose().getRotation().getMeasure().plus(shootingParameters.turretAngle()),
+            TurretConstants.robotToTurret);
+
+    // once turret is tuned better
+    // FuelSim.getInstance()
+    //     .launchFuel(
+    //         shooter.getGoalSpeed(),
+    //         Radians.of(Math.PI / 2).minus(hood.getHoodAngle()),
+    //         swerve.getRobotPose().getRotation().getMeasure().plus(turret.getTurretAngle()),
+    //         TurretConstants.robotToTurret);
   }
 
   public boolean canSimIntake() {

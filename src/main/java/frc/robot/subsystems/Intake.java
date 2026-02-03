@@ -4,63 +4,119 @@
 
 package frc.robot.subsystems;
 
-import com.ctre.phoenix6.configs.TalonFXConfiguration;
+import static edu.wpi.first.units.Units.Rotations;
+
+import com.ctre.phoenix6.StatusSignal;
+import com.ctre.phoenix6.configs.CANcoderConfiguration;
+import com.ctre.phoenix6.configs.MagnetSensorConfigs;
+import com.ctre.phoenix6.controls.Follower;
 import com.ctre.phoenix6.controls.MotionMagicVoltage;
+import com.ctre.phoenix6.hardware.CANcoder;
 import com.ctre.phoenix6.hardware.TalonFX;
+import com.ctre.phoenix6.signals.MotorAlignmentValue;
+import com.ctre.phoenix6.signals.SensorDirectionValue;
+import edu.wpi.first.units.measure.Angle;
 import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
-import frc.robot.Constants;
-import frc.robot.Constants.intakeConstants;
+import frc.robot.Constants.IntakeConstants;
 
 public class Intake extends SubsystemBase {
   /*Objects */
-  private final TalonFX armMotor;
+  private final TalonFX armMainMotor;
+  private final Follower armFollowerMotor;
   private final TalonFX intakeMotor;
-  private final MotionMagicVoltage MM;
-  private final TalonFXConfiguration config;
+  private CANcoder armEncoder;
+
+  private final MotionMagicVoltage motionMagicRequest = new MotionMagicVoltage(0);
+
+  private StatusSignal<Angle> armMainPosition;
+
+  // private StatusSignal<Angle> armFollowerPosition;
 
   /*MotionMagic*/
   public Intake() {
-    intakeMotor = new TalonFX(intakeConstants.wheelID);
-    armMotor = new TalonFX(intakeConstants.armID);
-    MM = new MotionMagicVoltage(Constants.intakeConstants.voltagePreset);
-    config = new TalonFXConfiguration();
-    config.Feedback.SensorToMechanismRatio = Constants.intakeConstants.gearRatio;
-    /*Random Values Currently */
-    config.Slot0.kP = 1.5;
-    config.Slot0.kD = .5;
-    config.Slot0.kI = .5;
+    intakeMotor = new TalonFX(IntakeConstants.intakeID);
+    armMainMotor = new TalonFX(IntakeConstants.armMainID);
+    armFollowerMotor = new Follower(IntakeConstants.armMainID, MotorAlignmentValue.Opposed);
+    // armFollowerMotor = new TalonFX(IntakeConstants.armFollowerID);
 
-    config.MotionMagic.MotionMagicCruiseVelocity = 5;
-    config.MotionMagic.MotionMagicAcceleration = 1;
-    config.MotionMagic.MotionMagicJerk = 10;
+    armEncoder = new CANcoder(IntakeConstants.armEncoderID);
 
-    armMotor.getConfigurator().apply(config);
+    armMainMotor.getConfigurator().apply(IntakeConstants.armConfigs);
+    // armFollowerMotor.getConfigurator().apply(IntakeConstants.armConfigs);
+
+    armMainPosition = armMainMotor.getPosition();
+    // armFollowerPosition = armFollowerMotor.getPosition();
+
+    armEncoder
+        .getConfigurator()
+        .apply(
+            new CANcoderConfiguration()
+                .withMagnetSensor(
+                    new MagnetSensorConfigs()
+                        .withMagnetOffset(IntakeConstants.armMagnetOffset)
+                        .withSensorDirection(SensorDirectionValue.CounterClockwise_Positive)));
+
+    armMainMotor.setPosition(getAbsoluteArmAngle().in(Rotations));
+  }
+
+  public void setIntakeSpeed(double speed) {
+    intakeMotor.set(speed);
+  }
+
+  public void stopIntake() {
+    intakeMotor.stopMotor();
+  }
+
+  public Command stop() {
+    return runOnce(this::stopIntake).withName("Stop Intake");
+  }
+
+  public Command intakeToPosition(boolean downPosition) {
+    return run(() -> {
+          if (downPosition) {
+            armMainMotor.setControl(motionMagicRequest.withPosition(IntakeConstants.downPosition));
+          } else {
+            armMainMotor.setControl(motionMagicRequest.withPosition(IntakeConstants.upPosition));
+          }
+        })
+        .withName("Intake working");
   }
 
   public Command intakeSequence(boolean intakeDown) {
     return run(() -> {
           if (intakeDown) {
-            armMotor.setControl(MM.withPosition(intakeConstants.downPosition));
-            intakeMotor.set(intakeConstants.speedUp);
+            armMainMotor.setControl(motionMagicRequest.withPosition(IntakeConstants.downPosition));
+            setIntakeSpeed(IntakeConstants.intakeSpeed);
           } else {
-            armMotor.setControl(MM.withPosition(intakeConstants.upPosition));
-            intakeMotor.set(0);
+            armMainMotor.setControl(motionMagicRequest.withPosition(IntakeConstants.upPosition));
+            stopIntake();
           }
         })
         .withName("Intake working");
   }
 
   public boolean isIntakeDeployed() {
-    // return armMotor.getPosition() > armDownPositionTolerance ? true : false;
+    // return getAbsoluteArmAngle().in(Rotations)
+    //         > IntakeConstants.armDownPositionTolerance.in(Rotations)
+    //     ? true
+    //     : false;
     return true; // FOR TESTING IN SIM
+  }
+
+  public Angle getAbsoluteArmAngle() {
+    return armEncoder.getAbsolutePosition().getValue();
+  }
+
+  public Angle getArmAngle() {
+    return armMainPosition.getValue();
   }
 
   @Override
   public void periodic() {
-    // This method will be called once per scheduler run
+    armMainPosition.refresh();
     SmartDashboard.putNumber("Intake speed", intakeMotor.get());
-    SmartDashboard.putNumber("Intake Arm Position", armMotor.getPosition().getValueAsDouble());
+    SmartDashboard.putNumber("Intake Arm Position", armMainPosition.getValue().in(Rotations));
   }
 }
