@@ -83,7 +83,8 @@ public class SOTMCalculator {
   private static Translation2d robotToTurret2d = TurretConstants.robotToTurret.toTranslation2d();
   public static Time accelTime = Seconds.of(0.1353);
 
-  public record ShootingParameters(LinearVelocity shooterSpeed, Angle turretAngle, Angle hoodAngle) {}
+  public record ShootingParameters(
+      LinearVelocity shooterSpeed, Angle turretAngle, Angle hoodAngle) {}
 
   public static ShootingParameters getParameters(
       Swerve swerve,
