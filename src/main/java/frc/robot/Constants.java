@@ -5,6 +5,7 @@
 package frc.robot;
 
 import static edu.wpi.first.units.Units.Degrees;
+
 import static edu.wpi.first.units.Units.DegreesPerSecond;
 import static edu.wpi.first.units.Units.DegreesPerSecondPerSecond;
 import static edu.wpi.first.units.Units.FeetPerSecond;
@@ -479,7 +480,8 @@ public final class Constants {
     public static final Angle maxAngle = Degrees.of(59.231);
 
     public static final double hoodGearRatio =
-        ((48 / 12) * (30 / 15) * (15 / 10)) / ((maxAngle.minus(minAngle)).in(Degrees) / 360);
+      ((48 / 12) * (30 / 15) * (15 / 10)) / ((maxAngle.minus(minAngle)).in(Degrees) / 360);
+
 
     public static final MotionMagicConfigs motionMagicConfigs =
         new MotionMagicConfigs()
