@@ -38,7 +38,7 @@ public class FuelSim {
   private static final double TRENCH_BAR_HEIGHT = 0.102;
   private static final double TRENCH_BAR_WIDTH = 0.152;
   private static final double FRICTION =
-      0.1; // proportion of horizontal velocity to lose per second while on ground
+      0.25; // proportion of horizontal velocity to lose per second while on ground
   private static final double FUEL_MASS = 0.448 * 0.45392; // kgs
   private static final double FUEL_CROSS_AREA = Math.PI * FUEL_RADIUS * FUEL_RADIUS;
   // Drag coefficient of smooth sphere:
@@ -725,6 +725,7 @@ public class FuelSim {
     private final int exitVelXMult;
 
     private int score = 0;
+    private boolean onlyScoreWhenActive = false;
 
     private Hub(Translation2d center, Translation3d exit, int exitVelXMult) {
       this.center = center;
@@ -732,11 +733,19 @@ public class FuelSim {
       this.exitVelXMult = exitVelXMult;
     }
 
+    public void toggleScoreWhenActive(boolean toggle) {
+      onlyScoreWhenActive = toggle;
+    }
+
     private void handleHubInteraction(Fuel fuel) {
       if (didFuelScore(fuel)) {
         fuel.pos = exit;
         fuel.vel = getDispersalVelocity();
-        score++;
+        if (onlyScoreWhenActive) {
+          if (HubTracker.isActive()) score++;
+        } else {
+          score++;
+        }
       }
     }
 

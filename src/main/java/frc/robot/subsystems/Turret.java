@@ -7,6 +7,7 @@ package frc.robot.subsystems;
 import static edu.wpi.first.units.Units.Degrees;
 import static edu.wpi.first.units.Units.Radians;
 import static edu.wpi.first.units.Units.Rotations;
+import static edu.wpi.first.units.Units.RotationsPerSecond;
 
 import com.ctre.phoenix6.StatusSignal;
 import com.ctre.phoenix6.configs.CANcoderConfiguration;
@@ -21,7 +22,6 @@ import edu.wpi.first.math.MathUtil;
 import edu.wpi.first.math.geometry.Pose2d;
 import edu.wpi.first.math.geometry.Pose3d;
 import edu.wpi.first.math.geometry.Rotation2d;
-import edu.wpi.first.math.geometry.Transform2d;
 import edu.wpi.first.math.geometry.Translation2d;
 import edu.wpi.first.math.system.plant.DCMotor;
 import edu.wpi.first.math.system.plant.LinearSystemId;
@@ -53,6 +53,8 @@ public class Turret extends SubsystemBase {
   private TalonFX turretMotor;
 
   private StatusSignal<Angle> turretPosition;
+
+  private Angle desiredAngle = Degrees.of(0);
 
   private final MotionMagicVoltage motionMagicRequest = new MotionMagicVoltage(0);
 
@@ -93,53 +95,29 @@ public class Turret extends SubsystemBase {
             DCMotor.getKrakenX60(1));
   }
 
-  // public void faceTowards(Pose2d target, Pose2d robotPose) {
-  //   Pose2d turretPose =
-  //       robotPose.transformBy(
-  //           new Transform2d(TurretConstants.turretOnRobot.toTranslation2d(), Rotation2d.kZero));
-
-  //   Rotation2d turretAngle =
-  // target.getTranslation().minus(turretPose.getTranslation()).getAngle();
-  //   Rotation2d angleToFace = turretAngle.minus(robotPose.getRotation());
-  //   Angle finalAngle = Degrees.of(angleToFace.getDegrees());
-  //   finalAngle = optimizeAngle(finalAngle);
-
-  //   turretMotor.setControl(motionMagicRequest.withPosition(finalAngle.in(Rotations)));
-
-  // }
-
   public Command faceTarget(Supplier<Pose2d> targetSupplier, Supplier<Pose2d> robotPoseSupplier) {
     return run(() -> {
-          Pose2d target = targetSupplier.get();
+          Pose2d targetPose = targetSupplier.get();
           Pose2d robotPose = robotPoseSupplier.get();
 
-          Pose2d turretPose =
-              robotPose.transformBy(
-                  new Transform2d(
-                      TurretConstants.robotToTurret.toTranslation2d(), Rotation2d.kZero));
+          Angle angleToFace = fieldAngleToFaceTarget(targetPose.getTranslation(), robotPose);
 
-          Rotation2d angleToFace =
-              target.getTranslation().minus(turretPose.getTranslation()).getAngle();
-          Rotation2d turretAngle = angleToFace.minus(robotPose.getRotation());
-          Angle finalAngle = Degrees.of(turretAngle.getDegrees());
-          finalAngle = optimizeAngle(finalAngle);
-
-          turretMotor.setControl(motionMagicRequest.withPosition(finalAngle.in(Rotations)));
+          turretMotor.setControl(motionMagicRequest.withPosition(angleToFace.in(Rotations)));
         })
         .withName("Turret Face Target");
   }
 
-  public Angle angleToFaceTarget(Translation2d targetPose, Pose2d robotPose) {
-    Pose2d turretPose =
-        robotPose.transformBy(
-            new Transform2d(TurretConstants.robotToTurret.toTranslation2d(), Rotation2d.kZero));
+  public Angle fieldAngleToFaceTarget(Translation2d targetPose, Pose2d robotPose) {
+    Pose2d turretPose = robotPose.transformBy(TurretConstants.robotToTurretTransform);
 
     Rotation2d turretAngle = targetPose.minus(turretPose.getTranslation()).getAngle();
-    Rotation2d angleToFace = turretAngle.minus(robotPose.getRotation());
-    Angle finalAngle = Degrees.of(angleToFace.getDegrees());
-    finalAngle = optimizeAngle(finalAngle);
+    Rotation2d fieldAngle = turretAngle.minus(robotPose.getRotation());
 
-    return finalAngle;
+    SmartDashboard.putNumber("Turret/READ HERE", turretAngle.getDegrees());
+
+    Angle angleToFace = optimizeAngle(Degrees.of(fieldAngle.getDegrees()));
+
+    return angleToFace;
   }
 
   @Logged(name = "Turret Angle")
@@ -168,19 +146,20 @@ public class Turret extends SubsystemBase {
   }
 
   public void setTargetAngle(Angle desiredTurretAngle) {
-    turretMotor.setControl(motionMagicRequest.withPosition(optimizeAngle(desiredTurretAngle)));
+    desiredAngle = optimizeAngle(desiredTurretAngle);
+    turretMotor.setControl(motionMagicRequest.withPosition(desiredAngle.in(Rotations)));
   }
 
   private Angle optimizeAngle(Angle desiredAngle) {
-    double current = turretPosition.getValue().in(Degrees);
+    double currentDeg = turretPosition.getValue().in(Degrees);
 
     double desiredDeg = desiredAngle.in(Degrees);
 
-    double delta = desiredDeg - current;
+    double delta = desiredDeg - currentDeg;
     while (delta > 180) delta -= 360;
     while (delta < -180) delta += 360;
 
-    double candidate = current + delta;
+    double candidate = currentDeg + delta;
 
     if (candidate > TurretConstants.MAX_ANGLE.in(Degrees)) {
       candidate -= 360;
@@ -209,16 +188,8 @@ public class Turret extends SubsystemBase {
     return runOnce(() -> turretMotor.stopMotor()).withName("Stop Turret");
   }
 
-  public void moveTurret(Double speed) {
-    turretMotor.set(speed);
-  }
-
-  public Command spinOne() {
-    return run(() -> turretMotor.setControl(motionMagicRequest.withPosition(1)));
-  }
-
-  public Command spinZero() {
-    return run(() -> turretMotor.setControl(motionMagicRequest.withPosition(0)));
+  public double getTurretVelocity() {
+    return turretMotor.getVelocity().getValue().in(RotationsPerSecond);
   }
 
   public boolean hasDriftedTooMuch(Angle tolerance) {
@@ -239,6 +210,10 @@ public class Turret extends SubsystemBase {
     turretPosition.refresh();
     SmartDashboard.putNumber("Turret/TwoEncoder Angle", getAbsoluteTurretPosition().in(Degrees));
     SmartDashboard.putNumber("Turret/Turret Angle", turretPosition.getValue().in(Degrees));
+    SmartDashboard.putNumber("Turret/desired turret angle", desiredAngle.in(Degrees));
+    SmartDashboard.putNumber(
+        "Turret/Angle difference", desiredAngle.minus(turretPosition.getValue()).in(Degrees));
+
     SmartDashboard.putBoolean("Turret/Drifted too much", hasDriftedTooMuch(Degrees.of(5)));
   }
 
