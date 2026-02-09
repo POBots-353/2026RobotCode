@@ -27,7 +27,10 @@ public class SOTMCalculator {
   public static Time accelTime = Seconds.of(0.1353);
 
   public record ShootingParameters(
-      LinearVelocity shooterSpeed, Angle turretAngle, Angle hoodAngle) {}
+      LinearVelocity shooterSpeed,
+      Angle turretAngle,
+      Angle hoodAngle,
+      Translation2d lookAheadPosition) {}
 
   public static ShootingParameters getParameters(
       Swerve swerve,
@@ -44,6 +47,7 @@ public class SOTMCalculator {
         robotPose.getTranslation().plus(robotToTurret2d.rotateBy(robotPose.getRotation()));
 
     double robotAngle = robotPose.getRotation().getRadians();
+
     double turretVelocityX =
         fieldChassisSpeeds.vxMetersPerSecond
             + fieldChassisSpeeds.omegaRadiansPerSecond
@@ -62,7 +66,7 @@ public class SOTMCalculator {
 
     double timeOfFlight = timeOfFlightMap.get(turretToTargetDistance);
 
-    SmartDashboard.putNumber("SOTM/distance", turretToTargetDistance);
+    SmartDashboard.putNumber("SOTM/turretToLookAheadDistance", turretToTargetDistance);
 
     for (int i = 0; i < 20; i++) {
       double offsetX =
@@ -95,6 +99,7 @@ public class SOTMCalculator {
     Rotation2d hoodAngle = hoodAngleMap.get(turretToTargetDistance);
     LinearVelocity shooterSpeed = MetersPerSecond.of(shooterSpeedMap.get(turretToTargetDistance));
 
-    return new ShootingParameters(shooterSpeed, turretAngle, hoodAngle.getMeasure());
+    return new ShootingParameters(
+        shooterSpeed, turretAngle, hoodAngle.getMeasure(), lookAheadPosition);
   }
 }

@@ -69,6 +69,7 @@ public final class Constants {
     public static final int maxCapacity = 30;
     public static final double fuelsPerSecond = 6.7;
     public static final double loopPeriodSecs = 0.020;
+    public static final Distance closestPossibleShotDistance = Meters.of(1.5);
   }
 
   public static class SOTMConstants {

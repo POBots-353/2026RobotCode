@@ -49,6 +49,7 @@ import edu.wpi.first.wpilibj2.command.Subsystem;
 import edu.wpi.first.wpilibj2.command.sysid.SysIdRoutine;
 import frc.robot.Constants.AutoConstants;
 import frc.robot.Constants.FieldConstants;
+import frc.robot.Constants.SimConstants;
 import frc.robot.Constants.TurretConstants;
 import frc.robot.Constants.VisionConstants;
 import frc.robot.generated.TunerConstants.TunerSwerveDrivetrain;
@@ -63,6 +64,7 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 import java.util.function.Supplier;
+import lombok.Setter;
 import org.photonvision.EstimatedRobotPose;
 import org.photonvision.PhotonCamera;
 import org.photonvision.PhotonPoseEstimator;
@@ -108,8 +110,6 @@ public class Swerve extends TunerSwerveDrivetrain implements Subsystem {
           .withForwardPerspective(ForwardPerspectiveValue.OperatorPerspective)
           .withSteerRequestType(SteerRequestType.Position);
 
-  private Timer timer = new Timer();
-
   private double targetFuelYaw = 0;
   public Rotation2d desiredFuelRotation = Rotation2d.k180deg;
 
@@ -145,6 +145,8 @@ public class Swerve extends TunerSwerveDrivetrain implements Subsystem {
   private Optional<Matrix<N8, N1>> arducamFuelDistCoeffs = Optional.empty();
 
   public SwerveDriveState stateCache = getState();
+
+  @Setter private Translation2d lookAheadPose = new Translation2d();
 
   private ExtendedVisionSystemSim visionSim;
 
@@ -348,20 +350,23 @@ public class Swerve extends TunerSwerveDrivetrain implements Subsystem {
         Set.of(this));
   }
 
-  public Command driveOverBump(String direction) {
-    return Commands.runOnce(timer::restart)
-        .andThen(
-            Commands.run(
-                () -> {
-                  if (direction == "To Middle") {
-                    this.setControl(
-                        fieldOriented.withVelocityX(0.1).withVelocityY(0).withRotationalRate(0));
-                  } else {
-                    this.setControl(
-                        fieldOriented.withVelocityX(-0.1).withVelocityY(0).withRotationalRate(0));
-                  }
-                }))
-        .until(() -> timer.hasElapsed(0.5) && getPigeon2().getPitch().getValueAsDouble() == 0);
+  public Command driveOverBump(boolean toMiddle) {
+    double startTime = Timer.getFPGATimestamp();
+    return Commands.run(
+            () -> {
+              if (toMiddle) {
+                this.setControl(
+                    fieldOriented.withVelocityX(0.1).withVelocityY(0).withRotationalRate(0));
+              } else {
+                this.setControl(
+                    fieldOriented.withVelocityX(-0.1).withVelocityY(0).withRotationalRate(0));
+              }
+            })
+        .until(
+            () ->
+                (Timer.getFPGATimestamp() - startTime) > 0.5
+                    && Math.abs(getPigeon2().getPitch().getValueAsDouble()) <= 0.353)
+        .withTimeout(Seconds.of(3.53));
   }
 
   public Command pathFindThroughTrench() {
@@ -394,6 +399,21 @@ public class Swerve extends TunerSwerveDrivetrain implements Subsystem {
             },
             Set.of(this))
         .withName("PathFindThroughTrench");
+  }
+
+  public boolean tooCloseToHub() {
+
+    Translation2d turretPose =
+        stateCache.Pose
+            .getTranslation()
+            .plus(
+                TurretConstants.robotToTurretTransform
+                    .getTranslation()
+                    .rotateBy(stateCache.Pose.getRotation()));
+
+    double turretToHubDistance = lookAheadPose.getDistance(turretPose);
+
+    return turretToHubDistance < SimConstants.closestPossibleShotDistance.in(Meters);
   }
 
   public boolean onLeftSide() {
