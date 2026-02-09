@@ -109,9 +109,8 @@ public class GuidedTeleopSwerve extends Command {
     commandedVelocity.set(1, 0, getStrafeSpeed());
 
     Vector<N2> toTarget = new Vector<>(Nat.N2());
-
-    toTarget.set(0, 0, robotPose.getX() - targetPose.getX());
-    toTarget.set(1, 0, robotPose.getY() - targetPose.getY());
+    toTarget.set(0, 0, (flipFactor) * (targetPose.getX() - robotPose.getX()));
+    toTarget.set(1, 0, (flipFactor) * (targetPose.getY() - robotPose.getY()));
 
     double dotProduct = commandedVelocity.unit().dot(toTarget.unit());
 
@@ -185,7 +184,7 @@ public class GuidedTeleopSwerve extends Command {
     swerve.setControl(
         fieldOriented
             .withVelocityX(forward)
-             .withVelocityY(strafe)
+            .withVelocityY(strafe)
             .withRotationalRate(rotDiagonalSpeed));
   }
 
@@ -204,7 +203,8 @@ public class GuidedTeleopSwerve extends Command {
     double dotProduct = currentDriveMode == DriveMode.NormalDrive ? 0 : getDotProduct();
 
     DriveMode effectiveDriveMode =
-        (manualOverrideSupplier.getAsBoolean() || (dotProduct < .353))
+        (manualOverrideSupplier.getAsBoolean()
+                || (dotProduct < 0.05)) // only lock if in trying to drive in that direction
             ? DriveMode.NormalDrive
             : currentDriveMode;
 
