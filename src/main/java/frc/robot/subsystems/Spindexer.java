@@ -8,6 +8,7 @@ import au.grapplerobotics.LaserCan;
 import com.ctre.phoenix6.configs.TalonFXConfiguration;
 import com.ctre.phoenix6.hardware.TalonFX;
 import edu.wpi.first.math.filter.Debouncer;
+import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
 import frc.robot.Constants.SpindexerConstants;
@@ -16,6 +17,7 @@ public class Spindexer extends SubsystemBase {
   private TalonFX SpindexerMotor;
   private LaserCan SpindexerLaser;
   private Debouncer SpindexDebouncer;
+  private Debouncer currentEmptyDebouncer = new Debouncer(0.4);
 
   /** Creates a new Spindexer. */
   public Spindexer() {
@@ -43,6 +45,14 @@ public class Spindexer extends SubsystemBase {
     return SpindexerMotor.get();
   }
 
+  public double getCurrent() {
+    return SpindexerMotor.getStatorCurrent().getValueAsDouble();
+  }
+
+  public boolean currentSaysEmpty() {
+    return currentEmptyDebouncer.calculate(getCurrent() < 9.0); // random number need to test
+  }
+
   public Command runSpindexer() {
     return run(this::setSpeed);
   }
@@ -65,10 +75,6 @@ public class Spindexer extends SubsystemBase {
         });
   }
 
-  // new command runUntilEMpty
-  // empty means laser can cant see anything anymore
-  // look up debouncer
-
   public Command runUntilEmptyCommand() {
     return (runSpindexer()).until(() -> SpindexDebouncer.calculate(!beamBroken()));
   }
@@ -88,8 +94,13 @@ public class Spindexer extends SubsystemBase {
     }
   }
 
+  public boolean isEmpty() {
+    return !beamBroken() && currentSaysEmpty();
+  }
+
   @Override
   public void periodic() {
-    // This method will be called once per scheduler run
+    SmartDashboard.putNumber("Spindexer Current", getCurrent());
+    SmartDashboard.putBoolean("Spindexer Beam Broken", beamBroken());
   }
 }
