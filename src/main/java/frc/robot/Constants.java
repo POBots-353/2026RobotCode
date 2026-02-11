@@ -164,10 +164,10 @@ public final class Constants {
   }
 
   public static class IntakeConstants {
-    public static final int armMainID = 15;
-    public static final int armFollowerID = 16;
-    public static final int intakeID = 17;
-    public static final int armEncoderID = 18;
+    public static final int armMainID = 14;
+    public static final int armFollowerID = 15;
+    public static final int intakeID = 16;
+    public static final int armEncoderID = 17;
 
     public static final double armGearRatio = 3.0;
 
@@ -232,40 +232,81 @@ public final class Constants {
 
     public static final Transform3d arducamLeftTransform =
         new Transform3d(
-            Units.inchesToMeters(-10.02),
-            Units.inchesToMeters(10.02),
-            Units.inchesToMeters(5),
+            Units.inchesToMeters(0.036),
+            Units.inchesToMeters(12.89),
+            Units.inchesToMeters(11.8),
             new Rotation3d(
-                0, Units.degreesToRadians(-25), Units.degreesToRadians(180 - 45))); // Pitch: 65
+                0, Units.degreesToRadians(-25), Units.degreesToRadians(90))); // Pitch: 65
 
     public static final String arducamRightName = "Arducam_Right";
 
     public static final Transform3d arducamRightTransform =
         new Transform3d(
-            Units.inchesToMeters(-10.02),
-            Units.inchesToMeters(-10.02),
-            Units.inchesToMeters(5),
+            Units.inchesToMeters(2.8),
+            Units.inchesToMeters(-12.8),
+            Units.inchesToMeters(9.4),
+            new Rotation3d(
+                0, Units.degreesToRadians(-25), Units.degreesToRadians(-90))); // Pitch: 65
+
+    public static final String arducamBackLeftName = "Arducam_BackLeft";
+
+    public static final Transform3d arducamBackLeftTransform =
+        new Transform3d(
+            Units.inchesToMeters(-9.6),
+            Units.inchesToMeters(10.6),
+            Units.inchesToMeters(8.319),
+            new Rotation3d(
+                0, Units.degreesToRadians(-25), Units.degreesToRadians(180 - 45))); // Pitch: 65
+
+    public static final String arducamBackRightName = "Arducam_BackRight";
+
+    public static final Transform3d arducamBackRightTransform =
+        new Transform3d(
+            Units.inchesToMeters(-12.147),
+            Units.inchesToMeters(-12.505),
+            Units.inchesToMeters(15),
             new Rotation3d(
                 0, Units.degreesToRadians(-25), Units.degreesToRadians(180 + 45))); // Pitch: 65
 
-    public static final String arducamFrontName = "Arducam_Front";
+    // public static final String arducamFrontName = "Arducam_Front";
 
-    public static final Transform3d arducamFrontTransform =
-        new Transform3d(
-            Units.inchesToMeters(0),
-            Units.inchesToMeters(-1),
-            Units.inchesToMeters(10.07),
-            new Rotation3d(0, Units.degreesToRadians(-15), Units.degreesToRadians(0))); // Pitch: 65
+    // public static final Transform3d arducamFrontTransform =
+    //     new Transform3d(
+    //         Units.inchesToMeters(0),
+    //         Units.inchesToMeters(-1),
+    //         Units.inchesToMeters(10.07),
+    //         new Rotation3d(0, Units.degreesToRadians(-15), Units.degreesToRadians(0))); // Pitch:
+    // 65
 
     public static final String arducamFuelName = "Arducam_Fuel";
 
     // TODO: Update this transform
     public static final Transform3d arducamFuelTransform =
         new Transform3d(
+            Units.inchesToMeters(24.468),
             Units.inchesToMeters(0),
-            Units.inchesToMeters(0),
-            Units.inchesToMeters(0),
-            new Rotation3d(0, Units.degreesToRadians(0), Units.degreesToRadians(0)));
+            Units.inchesToMeters(10.591),
+            new Rotation3d(0, Units.degreesToRadians(-13), Units.degreesToRadians(0)));
+
+    public static InterpolatingDoubleTreeMap fuelAreaToDistanceMap =
+        new InterpolatingDoubleTreeMap();
+
+    static {
+      fuelAreaToDistanceMap.put(80640.0, 15.0); // PIXEL area - INCHES horizontal distnace
+      fuelAreaToDistanceMap.put(56882.0, 18.0);
+      fuelAreaToDistanceMap.put(43264.0, 20.0);
+      fuelAreaToDistanceMap.put(33488.0, 23.0);
+      fuelAreaToDistanceMap.put(26080.0, 26.0);
+      fuelAreaToDistanceMap.put(21025.0, 29.0);
+      fuelAreaToDistanceMap.put(14884.0, 33.0);
+      fuelAreaToDistanceMap.put(13110.0, 37.0);
+      fuelAreaToDistanceMap.put(10816.0, 40.0);
+      fuelAreaToDistanceMap.put(9312.0, 43.0);
+      fuelAreaToDistanceMap.put(8190.0, 46.0);
+      fuelAreaToDistanceMap.put(7225.0, 49.0);
+      fuelAreaToDistanceMap.put(6400.0, 52.0);
+      fuelAreaToDistanceMap.put(5550.0, 56.0);
+    }
   }
 
   public static class FieldConstants {
@@ -458,9 +499,9 @@ public final class Constants {
     public static final Transform2d robotToTurretTransform =
         new Transform2d(TurretConstants.robotToTurret.toTranslation2d(), Rotation2d.kZero);
 
-    public static final int turretMotorID = 19;
-    public static final int encoderAID = 20;
-    public static final int encoderBID = 21;
+    public static final int turretMotorID = 18;
+    public static final int encoderAID = 19;
+    public static final int encoderBID = 20;
   }
 
   public static class AutoConstants {
@@ -475,7 +516,7 @@ public final class Constants {
   }
 
   public static class HoodConstants {
-    public static final int hoodMotorID = 22;
+    public static final int hoodMotorID = 21;
 
     public static final Angle minAngle = Degrees.of(21.448);
     public static final Angle maxAngle = Degrees.of(59.231);
@@ -529,8 +570,8 @@ public final class Constants {
   }
 
   public static class SpindexerConstants {
-    public static final int SpindexerMotorID = 23;
-    public static final int SpindexerLaserID = 24;
+    public static final int SpindexerMotorID = 22;
+    public static final int SpindexerLaserID = 23;
     public static final double SpindexerMotorSpeed = 0.5;
     public static final double SpindexerDistance = 100;
   }

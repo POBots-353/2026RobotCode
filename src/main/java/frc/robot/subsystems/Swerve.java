@@ -24,9 +24,11 @@ import edu.wpi.first.math.Vector;
 import edu.wpi.first.math.geometry.Pose2d;
 import edu.wpi.first.math.geometry.Pose3d;
 import edu.wpi.first.math.geometry.Rotation2d;
+import edu.wpi.first.math.geometry.Rotation3d;
 import edu.wpi.first.math.geometry.Transform2d;
 import edu.wpi.first.math.geometry.Transform3d;
 import edu.wpi.first.math.geometry.Translation2d;
+import edu.wpi.first.math.geometry.Translation3d;
 import edu.wpi.first.math.kinematics.ChassisSpeeds;
 import edu.wpi.first.math.kinematics.SwerveModuleState;
 import edu.wpi.first.math.numbers.N1;
@@ -41,6 +43,7 @@ import edu.wpi.first.wpilibj.Notifier;
 import edu.wpi.first.wpilibj.RobotController;
 import edu.wpi.first.wpilibj.Timer;
 import edu.wpi.first.wpilibj.smartdashboard.Field2d;
+import edu.wpi.first.wpilibj.smartdashboard.FieldObject2d;
 import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.Commands;
@@ -59,6 +62,7 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.Comparator;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -73,6 +77,7 @@ import org.photonvision.simulation.PhotonCameraSim;
 import org.photonvision.simulation.SimCameraProperties;
 import org.photonvision.targeting.PhotonPipelineResult;
 import org.photonvision.targeting.PhotonTrackedTarget;
+import org.photonvision.targeting.TargetCorner;
 
 /**
  * Class that extends the Phoenix 6 SwerveDrivetrain class and implements Subsystem so it can easily
@@ -103,20 +108,26 @@ public class Swerve extends TunerSwerveDrivetrain implements Subsystem {
   private final SwerveRequest.ApplyRobotSpeeds pathApplyRobotSpeeds =
       new SwerveRequest.ApplyRobotSpeeds().withDriveRequestType(DriveRequestType.Velocity);
 
+  public static record TrackedFuel(Pose2d pose, double lastSeen) {}
+
+  private HashMap<Integer, TrackedFuel> trackedFuels = new HashMap<>();
+
+  private int nextFuelID = 0;
+
   private Field2d field = new Field2d();
+
+  private FieldObject2d gamePieces = field.getObject("Fuel_GamePieces");
 
   private SwerveRequest.FieldCentric fieldOriented =
       new SwerveRequest.FieldCentric()
           .withForwardPerspective(ForwardPerspectiveValue.OperatorPerspective)
           .withSteerRequestType(SteerRequestType.Position);
 
-  private double targetFuelYaw = 0;
-  public Rotation2d desiredFuelRotation = Rotation2d.k180deg;
-
   private PhotonCamera arducamLeft = new PhotonCamera(VisionConstants.arducamLeftName);
-  private PhotonCamera arducamFront = new PhotonCamera(VisionConstants.arducamFrontName);
-  private PhotonCamera arducamFuel = new PhotonCamera(VisionConstants.arducamFuelName);
   private PhotonCamera arducamRight = new PhotonCamera(VisionConstants.arducamRightName);
+  private PhotonCamera arducamBackLeft = new PhotonCamera(VisionConstants.arducamBackLeftName);
+  private PhotonCamera arducamBackRight = new PhotonCamera(VisionConstants.arducamBackRightName);
+  private PhotonCamera arducamFuel = new PhotonCamera(VisionConstants.arducamFuelName);
 
   private PhotonPoseEstimator leftPoseEstimator =
       new PhotonPoseEstimator(FieldConstants.aprilTagLayout, VisionConstants.arducamLeftTransform);
@@ -124,12 +135,21 @@ public class Swerve extends TunerSwerveDrivetrain implements Subsystem {
   private PhotonPoseEstimator rightPoseEstimator =
       new PhotonPoseEstimator(FieldConstants.aprilTagLayout, VisionConstants.arducamRightTransform);
 
-  private PhotonPoseEstimator frontPoseEstimator =
-      new PhotonPoseEstimator(FieldConstants.aprilTagLayout, VisionConstants.arducamFrontTransform);
+  private PhotonPoseEstimator backLeftPoseEstimator =
+      new PhotonPoseEstimator(FieldConstants.aprilTagLayout, VisionConstants.arducamLeftTransform);
+
+  private PhotonPoseEstimator backRightPoseEstimator =
+      new PhotonPoseEstimator(FieldConstants.aprilTagLayout, VisionConstants.arducamRightTransform);
+
+  // private PhotonPoseEstimator frontPoseEstimator =
+  //     new PhotonPoseEstimator(FieldConstants.aprilTagLayout,
+  // VisionConstants.arducamFrontTransform);
 
   private List<PhotonPipelineResult> latestArducamLeftResult;
   private List<PhotonPipelineResult> latestArducamRightResult;
-  private List<PhotonPipelineResult> latestArducamFrontResult;
+  private List<PhotonPipelineResult> latestArducamBackLeftResult;
+  private List<PhotonPipelineResult> latestArducamBackRightResult;
+  // private List<PhotonPipelineResult> latestArducamFrontResult;
   private List<PhotonPipelineResult> latestArducamFuelResult;
 
   private Optional<Matrix<N3, N3>> arducamLeftMatrix = Optional.empty();
@@ -138,8 +158,14 @@ public class Swerve extends TunerSwerveDrivetrain implements Subsystem {
   private Optional<Matrix<N3, N3>> arducamRightMatrix = Optional.empty();
   private Optional<Matrix<N8, N1>> arducamRightDistCoeffs = Optional.empty();
 
-  private Optional<Matrix<N3, N3>> arducamFrontMatrix = Optional.empty();
-  private Optional<Matrix<N8, N1>> arducamFrontDistCoeffs = Optional.empty();
+  private Optional<Matrix<N3, N3>> arducamBackLeftMatrix = Optional.empty();
+  private Optional<Matrix<N8, N1>> arducamBackLeftDistCoeffs = Optional.empty();
+
+  private Optional<Matrix<N3, N3>> arducamBackRightMatrix = Optional.empty();
+  private Optional<Matrix<N8, N1>> arducamBackRightDistCoeffs = Optional.empty();
+
+  // private Optional<Matrix<N3, N3>> arducamFrontMatrix = Optional.empty();
+  // private Optional<Matrix<N8, N1>> arducamFrontDistCoeffs = Optional.empty();
 
   private Optional<Matrix<N3, N3>> arducamFuelMatrix = Optional.empty();
   private Optional<Matrix<N8, N1>> arducamFuelDistCoeffs = Optional.empty();
@@ -152,7 +178,9 @@ public class Swerve extends TunerSwerveDrivetrain implements Subsystem {
 
   private PhotonCameraSim arducamLeftSim;
   private PhotonCameraSim arducamRightSim;
-  private PhotonCameraSim arducamFrontSim;
+  private PhotonCameraSim arducamBackLeftSim;
+  private PhotonCameraSim arducamBackRightSim;
+  // private PhotonCameraSim arducamFrontSim;
   private PhotonCameraSim arducamFuelSim;
 
   @Logged(name = "Detected Targets")
@@ -402,9 +430,9 @@ public class Swerve extends TunerSwerveDrivetrain implements Subsystem {
   }
 
   public boolean tooCloseToHub() {
-
     Translation2d turretPose =
-        stateCache.Pose
+        stateCache
+            .Pose
             .getTranslation()
             .plus(
                 TurretConstants.robotToTurretTransform
@@ -548,14 +576,18 @@ public class Swerve extends TunerSwerveDrivetrain implements Subsystem {
 
     latestArducamLeftResult = arducamLeft.getAllUnreadResults();
     latestArducamRightResult = arducamRight.getAllUnreadResults();
-    latestArducamFrontResult = arducamFront.getAllUnreadResults();
+    latestArducamBackLeftResult = arducamBackLeft.getAllUnreadResults();
+    latestArducamBackRightResult = arducamBackRight.getAllUnreadResults();
+    // latestArducamFrontResult = arducamFront.getAllUnreadResults();
     latestArducamFuelResult = arducamFuel.getAllUnreadResults();
 
     double stateTimestamp = Utils.currentTimeToFPGATime(stateCache.Timestamp);
 
     leftPoseEstimator.addHeadingData(stateTimestamp, stateCache.Pose.getRotation());
     rightPoseEstimator.addHeadingData(stateTimestamp, stateCache.Pose.getRotation());
-    frontPoseEstimator.addHeadingData(stateTimestamp, stateCache.Pose.getRotation());
+    backLeftPoseEstimator.addHeadingData(stateTimestamp, stateCache.Pose.getRotation());
+    backRightPoseEstimator.addHeadingData(stateTimestamp, stateCache.Pose.getRotation());
+    // frontPoseEstimator.addHeadingData(stateTimestamp, stateCache.Pose.getRotation());
 
     if (arducamLeftMatrix.isEmpty()) {
       arducamLeftMatrix = arducamLeft.getCameraMatrix();
@@ -571,12 +603,26 @@ public class Swerve extends TunerSwerveDrivetrain implements Subsystem {
       arducamRightDistCoeffs = arducamRight.getDistCoeffs();
     }
 
-    if (arducamFrontMatrix.isEmpty()) {
-      arducamFrontMatrix = arducamFront.getCameraMatrix();
+    if (arducamBackLeftMatrix.isEmpty()) {
+      arducamBackLeftMatrix = arducamBackLeft.getCameraMatrix();
     }
-    if (arducamFrontDistCoeffs.isEmpty()) {
-      arducamFrontDistCoeffs = arducamFront.getDistCoeffs();
+    if (arducamBackLeftDistCoeffs.isEmpty()) {
+      arducamBackLeftDistCoeffs = arducamBackLeft.getDistCoeffs();
     }
+
+    if (arducamBackRightMatrix.isEmpty()) {
+      arducamBackRightMatrix = arducamBackRight.getCameraMatrix();
+    }
+    if (arducamBackRightDistCoeffs.isEmpty()) {
+      arducamBackRightDistCoeffs = arducamBackRight.getDistCoeffs();
+    }
+
+    // if (arducamFrontMatrix.isEmpty()) {
+    //   arducamFrontMatrix = arducamFront.getCameraMatrix();
+    // }
+    // if (arducamFrontDistCoeffs.isEmpty()) {
+    //   arducamFrontDistCoeffs = arducamFront.getDistCoeffs();
+    // }
 
     if (arducamFuelMatrix.isEmpty()) {
       arducamFuelMatrix = arducamFuel.getCameraMatrix();
@@ -585,7 +631,6 @@ public class Swerve extends TunerSwerveDrivetrain implements Subsystem {
       arducamFuelDistCoeffs = arducamFuel.getDistCoeffs();
     }
     updateVisionPoseEstimates();
-    updateFuelRotation();
 
     field.setRobotPose(stateCache.Pose);
 
@@ -788,14 +833,34 @@ public class Swerve extends TunerSwerveDrivetrain implements Subsystem {
         1);
 
     updateVisionPoses(
-        latestArducamFrontResult,
-        frontPoseEstimator,
-        arducamFrontMatrix,
-        arducamFrontDistCoeffs,
-        VisionConstants.arducamFrontTransform,
+        latestArducamBackLeftResult,
+        backLeftPoseEstimator,
+        arducamBackLeftMatrix,
+        arducamBackLeftDistCoeffs,
+        VisionConstants.arducamBackLeftTransform,
         Units.inchesToMeters(3.0),
         Units.inchesToMeters(2.5),
         1);
+
+    updateVisionPoses(
+        latestArducamBackRightResult,
+        backRightPoseEstimator,
+        arducamBackRightMatrix,
+        arducamBackRightDistCoeffs,
+        VisionConstants.arducamBackRightTransform,
+        Units.inchesToMeters(3.0),
+        Units.inchesToMeters(2.5),
+        1);
+
+    // updateVisionPoses(
+    //     latestArducamFrontResult,
+    //     frontPoseEstimator,
+    //     arducamFrontMatrix,
+    //     arducamFrontDistCoeffs,
+    //     VisionConstants.arducamFrontTransform,
+    //     Units.inchesToMeters(3.0),
+    //     Units.inchesToMeters(2.5),
+    //     1);
 
     Collections.sort(poseEstimates);
 
@@ -872,23 +937,84 @@ public class Swerve extends TunerSwerveDrivetrain implements Subsystem {
     return true;
   }
 
-  public void updateFuelRotation() {
-    double currentRotation = stateCache.Pose.getRotation().getDegrees();
-    if (latestArducamFuelResult == null || latestArducamFuelResult.isEmpty()) {
-      return;
-    }
+  // @Logged(name = "Object Detection Positions")
+  public Pose2d[] updateFuelPositions() {
+    double now = Timer.getFPGATimestamp();
+
+    if (latestArducamFuelResult == null || latestArducamFuelResult.isEmpty()) return new Pose2d[1];
     PhotonPipelineResult newestResult =
         latestArducamFuelResult.get(latestArducamFuelResult.size() - 1);
+    if (!newestResult.hasTargets()) return new Pose2d[1];
 
-    if (!newestResult.hasTargets()) {
-      return;
+    for (PhotonTrackedTarget target : newestResult.getTargets()) {
+      List<TargetCorner> targetCorners = target.getMinAreaRectCorners();
+
+      double dX = Math.abs(targetCorners.get(1).x - targetCorners.get(0).x);
+      double dY = Math.abs(targetCorners.get(3).y - targetCorners.get(0).y);
+
+      double boundingBoxArea = dX * dY;
+
+      double fuelXDistance = VisionConstants.fuelAreaToDistanceMap.get(boundingBoxArea);
+
+      double targetYawRad = Units.degreesToRadians(target.getYaw());
+
+      Translation3d camToTargetTranslation =
+          new Translation3d(fuelXDistance, fuelXDistance * Math.tan(targetYawRad), 0.0);
+
+      Transform3d camToTarget = new Transform3d(camToTargetTranslation, new Rotation3d());
+
+      Transform3d robotToTarget = VisionConstants.arducamFuelTransform.plus(camToTarget);
+
+      Pose3d fuelFieldPose3d = new Pose3d(stateCache.Pose).transformBy(robotToTarget);
+
+      Pose2d fuelFieldPose = fuelFieldPose3d.toPose2d();
+
+      int key = nextFuelID++;
+      trackedFuels.put(key, new TrackedFuel(fuelFieldPose, now));
     }
 
-    PhotonTrackedTarget target = newestResult.getBestTarget();
+    Pose2d[] posesArray = trackedFuels.values().stream().map(tf -> tf.pose).toArray(Pose2d[]::new);
 
-    targetFuelYaw = target.getYaw();
+    return posesArray;
 
-    desiredFuelRotation = Rotation2d.fromDegrees(currentRotation - targetFuelYaw);
+    // List<Pose2d> fuelPosesArray = new ArrayList<>();
+    // for (TrackedFuel fuel : trackedFuels.values()) {
+    //   fuelPosesArray.add(fuel.pose);
+    // }
+    // gamePieces.setPoses(fuelPosesArray);
+  }
+
+  @Logged(name = "Object Detection Positions")
+  public Pose2d[] updateFuelPositionsTemp() {
+    double[][] temporary = {
+      {20, 0},
+      {25, 15},
+      {30, -15}
+    };
+
+    List<Pose2d> poseList = new ArrayList<>();
+
+    for (double[] sample : temporary) {
+      double fuelXDistance = Units.inchesToMeters(sample[0]);
+      double targetYawRad = Units.degreesToRadians(sample[1]);
+
+      Translation3d camToTargetTranslation =
+          new Translation3d(fuelXDistance, fuelXDistance * Math.tan(targetYawRad), 0.0);
+
+      Transform3d camToTarget = new Transform3d(camToTargetTranslation, new Rotation3d());
+
+      Transform3d robotToTarget = VisionConstants.arducamFuelTransform.plus(camToTarget);
+
+      Pose3d fuelFieldPose3d = new Pose3d(stateCache.Pose).transformBy(robotToTarget);
+
+      poseList.add(fuelFieldPose3d.toPose2d());
+    }
+
+    // Pose3d temp = new Pose3d(stateCache.Pose).transformBy(VisionConstants.arducamFuelTransform);
+
+    // return new Pose2d[] {temp.toPose2d()};
+
+    return poseList.toArray(Pose2d[]::new);
   }
 
   private void initVisionSim() {
@@ -935,12 +1061,23 @@ public class Swerve extends TunerSwerveDrivetrain implements Subsystem {
         new PhotonCameraSim(arducamLeft, arducamProperties, FieldConstants.aprilTagLayout);
     arducamRightSim =
         new PhotonCameraSim(arducamRight, arducamProperties, FieldConstants.aprilTagLayout);
-    arducamFrontSim =
-        new PhotonCameraSim(arducamFront, arducamProperties, FieldConstants.aprilTagLayout);
+    arducamBackLeftSim =
+        new PhotonCameraSim(arducamBackLeft, arducamProperties, FieldConstants.aprilTagLayout);
+    arducamBackRightSim =
+        new PhotonCameraSim(arducamBackRight, arducamProperties, FieldConstants.aprilTagLayout);
+
+    arducamFuelSim =
+        new PhotonCameraSim(arducamFuel, arducamProperties, FieldConstants.aprilTagLayout);
+    // arducamFrontSim =
+    //     new PhotonCameraSim(arducamFront, arducamProperties, FieldConstants.aprilTagLayout);
 
     visionSim.addCamera(arducamLeftSim, VisionConstants.arducamLeftTransform);
     visionSim.addCamera(arducamRightSim, VisionConstants.arducamRightTransform);
-    visionSim.addCamera(arducamFrontSim, VisionConstants.arducamFrontTransform);
+    visionSim.addCamera(arducamBackLeftSim, VisionConstants.arducamBackLeftTransform);
+    visionSim.addCamera(arducamBackRightSim, VisionConstants.arducamBackRightTransform);
+    // visionSim.addCamera(arducamFuelSim, VisionConstants.arducamFuelTransform);
+
+    // visionSim.addCamera(arducamFrontSim, VisionConstants.arducamFrontTransform);
 
     arducamLeftSim.enableRawStream(true);
     arducamLeftSim.enableProcessedStream(true);
@@ -948,8 +1085,17 @@ public class Swerve extends TunerSwerveDrivetrain implements Subsystem {
     arducamRightSim.enableRawStream(true);
     arducamRightSim.enableProcessedStream(true);
 
-    arducamFrontSim.enableRawStream(true);
-    arducamFrontSim.enableProcessedStream(true);
+    arducamBackLeftSim.enableRawStream(true);
+    arducamBackLeftSim.enableProcessedStream(true);
+
+    arducamBackRightSim.enableRawStream(true);
+    arducamBackRightSim.enableProcessedStream(true);
+
+    arducamFuelSim.enableRawStream(true);
+    arducamFuelSim.enableProcessedStream(true);
+
+    // arducamFrontSim.enableRawStream(true);
+    // arducamFrontSim.enableProcessedStream(true);
   }
 
   public void configureAutoBuilder() {

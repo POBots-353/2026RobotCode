@@ -40,7 +40,7 @@ public class MoveToFuel extends Command {
   }
 
   private void updateDesiredRotation() {
-    desiredRotation = swerve.desiredFuelRotation;
+    // desiredRotation = swerve.desiredFuelRotation;
   }
 
   // Called when the command is initially scheduled.
