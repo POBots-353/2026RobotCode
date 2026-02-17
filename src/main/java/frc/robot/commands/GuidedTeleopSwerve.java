@@ -122,12 +122,23 @@ public class GuidedTeleopSwerve extends Command {
   }
 
   private double getForwardSpeed() {
-    return forwardRateLimiter.calculate(
-        -forwardSupplier.getAsDouble() * getMaxTranslationalSpeed());
+    double forwardSpeed =
+        forwardRateLimiter.calculate(-forwardSupplier.getAsDouble() * getMaxTranslationalSpeed());
+    if (Math.abs(forwardSupplier.getAsDouble()) <= .065) {
+      forwardSpeed = 0;
+      forwardRateLimiter.reset(0);
+    }
+    return forwardSpeed;
   }
 
   private double getStrafeSpeed() {
-    return strafeRateLimiter.calculate(-strafeSupplier.getAsDouble() * getMaxTranslationalSpeed());
+    double stafeSpeed =
+        strafeRateLimiter.calculate(-strafeSupplier.getAsDouble() * getMaxTranslationalSpeed());
+    if (Math.abs(strafeSupplier.getAsDouble()) <= .065) {
+      stafeSpeed = 0;
+      strafeRateLimiter.reset(0);
+    }
+    return stafeSpeed;
   }
 
   private double getRotationSpeed() {

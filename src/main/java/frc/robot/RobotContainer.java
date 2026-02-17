@@ -32,6 +32,7 @@ import frc.robot.generated.TunerConstants;
 import frc.robot.subsystems.Hood;
 import frc.robot.subsystems.Intake;
 import frc.robot.subsystems.Shooter;
+import frc.robot.subsystems.Spindexer;
 import frc.robot.subsystems.Swerve;
 import frc.robot.subsystems.Turret;
 import frc.robot.util.AllianceUtil;
@@ -86,6 +87,9 @@ public class RobotContainer {
   @Logged(name = "Intake")
   private final Intake intake = new Intake();
 
+  @Logged(name = "Spindexer")
+  private final Spindexer spindexer = new Spindexer();
+
   @Logged(name = "3D Visualization")
   private final RobotVisualization robotVisualization =
       new RobotVisualization(turret, hood, swerve, shooter);
@@ -131,7 +135,13 @@ public class RobotContainer {
     NamedCommands.registerCommand(
         "Shoot On The Move",
         new ShootOnTheMove(
-            swerve, turret, hood, shooter, AllianceUtil::getHubPose, robotVisualization));
+            swerve,
+            turret,
+            hood,
+            shooter,
+            spindexer,
+            AllianceUtil::getHubPose,
+            robotVisualization));
 
     NamedCommands.registerCommand(
         "Pathfind to Mid-Left Bumper", swerve.pathFindToPose(FieldConstants.midLBumperPose));
@@ -140,7 +150,8 @@ public class RobotContainer {
 
     NamedCommands.registerCommand(
         "FerryOTM",
-        new ShootOnTheMove(swerve, turret, hood, shooter, ferryPoseSupplier, robotVisualization));
+        new ShootOnTheMove(
+            swerve, turret, hood, shooter, spindexer, ferryPoseSupplier, robotVisualization));
 
     NamedCommands.registerCommand(
         "IntakeUntilFull", Commands.waitUntil(() -> !robotVisualization.canSimIntake()));
@@ -148,11 +159,17 @@ public class RobotContainer {
     NamedCommands.registerCommand(
         "SOTM Until Empty",
         new ShootOnTheMove(
-                swerve, turret, hood, shooter, AllianceUtil::getHubPose, robotVisualization)
+                swerve,
+                turret,
+                hood,
+                shooter,
+                spindexer,
+                AllianceUtil::getHubPose,
+                robotVisualization)
             .until(() -> robotVisualization.isEmpty()));
 
     NamedCommands.registerCommand(
-        "Shoot", Commands.run(() -> shooter.setSpeed(MetersPerSecond.of(1))).withTimeout(1));
+        "Shoot", Commands.run(() -> shooter.setGoalSpeed(MetersPerSecond.of(1))).withTimeout(1));
 
     configureDriverBindings();
     // configureOperatorBindings();
@@ -168,6 +185,9 @@ public class RobotContainer {
     if (RobotBase.isSimulation()) {
       configureFuelSim();
     }
+
+    SmartDashboard.putData(intake.zeroArmCommand());
+    SmartDashboard.putData(hood.zeroHoodCommand());
 
     goalShotTarget = AllianceUtil.getHubPose();
 
@@ -236,7 +256,13 @@ public class RobotContainer {
         .and(tooCloseToHubTrigger.negate())
         .whileTrue(
             new ShootOnTheMove(
-                swerve, turret, hood, shooter, goalShotTargetSupplier, robotVisualization));
+                swerve,
+                turret,
+                hood,
+                shooter,
+                spindexer,
+                goalShotTargetSupplier,
+                robotVisualization));
 
     swerve.setDefaultCommand(
         new GuidedTeleopSwerve(
@@ -256,9 +282,11 @@ public class RobotContainer {
 
     hood.setDefaultCommand(hood.aimForTarget(goalShotTargetSupplier, swerve::getRobotPose));
 
+    intake.setDefaultCommand(intake.intakeToPosition(false));
+
     shootButton.whileTrue(
         new ShootOnTheMove(
-            swerve, turret, hood, shooter, goalShotTargetSupplier, robotVisualization));
+            swerve, turret, hood, shooter, spindexer, goalShotTargetSupplier, robotVisualization));
   }
 
   private void configureOperatorBindings() {
@@ -268,15 +296,22 @@ public class RobotContainer {
         // .and(shootButton.negate())
         .whileTrue(
             new ShootOnTheMove(
-                swerve, turret, hood, shooter, goalShotTargetSupplier, robotVisualization));
+                swerve,
+                turret,
+                hood,
+                shooter,
+                spindexer,
+                goalShotTargetSupplier,
+                robotVisualization));
 
     Trigger ferryMode = operatorController.leftTrigger();
     // turret.setDefaultCommand(turret.faceTarget(AllianceUtil::getHubPose, swerve::getRobotPose));
 
-    hood.setDefaultCommand(hood.aimForTarget(AllianceUtil::getHubPose, swerve::getRobotPose));
+    // hood.setDefaultCommand(hood.aimForTarget(AllianceUtil::getHubPose, swerve::getRobotPose));
 
     ferryMode.whileTrue(
-        new ShootOnTheMove(swerve, turret, hood, shooter, ferryPoseSupplier, robotVisualization));
+        new ShootOnTheMove(
+            swerve, turret, hood, shooter, spindexer, ferryPoseSupplier, robotVisualization));
 
     operatorController
         .y()

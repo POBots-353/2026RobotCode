@@ -147,7 +147,6 @@ public class Turret extends SubsystemBase {
 
   public void setTargetAngle(Angle desiredTurretAngle) {
     desiredAngle = optimizeAngle(desiredTurretAngle);
-    turretMotor.setControl(motionMagicRequest.withPosition(desiredAngle.in(Rotations)));
   }
 
   private Angle optimizeAngle(Angle desiredAngle) {
@@ -208,6 +207,9 @@ public class Turret extends SubsystemBase {
   @Override
   public void periodic() {
     turretPosition.refresh();
+
+    turretMotor.setControl(motionMagicRequest.withPosition(desiredAngle.in(Rotations)));
+
     SmartDashboard.putNumber("Turret/TwoEncoder Angle", getAbsoluteTurretPosition().in(Degrees));
     SmartDashboard.putNumber("Turret/Turret Angle", turretPosition.getValue().in(Degrees));
     SmartDashboard.putNumber("Turret/desired turret angle", desiredAngle.in(Degrees));

@@ -4,9 +4,10 @@
 
 package frc.robot.subsystems;
 
+import static edu.wpi.first.units.Units.Amps;
 import static edu.wpi.first.units.Units.Degrees;
 import static edu.wpi.first.units.Units.Radians;
-import static edu.wpi.first.units.Units.Rotations;
+import static edu.wpi.first.units.Units.RotationsPerSecond;
 
 import com.ctre.phoenix6.StatusSignal;
 import com.ctre.phoenix6.controls.MotionMagicVoltage;
@@ -19,10 +20,13 @@ import edu.wpi.first.math.geometry.Transform2d;
 import edu.wpi.first.math.system.plant.DCMotor;
 import edu.wpi.first.math.util.Units;
 import edu.wpi.first.units.measure.Angle;
+import edu.wpi.first.units.measure.AngularVelocity;
+import edu.wpi.first.units.measure.Current;
 import edu.wpi.first.wpilibj.RobotController;
 import edu.wpi.first.wpilibj.simulation.SingleJointedArmSim;
 import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 import edu.wpi.first.wpilibj2.command.Command;
+import edu.wpi.first.wpilibj2.command.Commands;
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
 import frc.robot.Constants.HoodConstants;
 import frc.robot.Constants.TurretConstants;
@@ -32,6 +36,8 @@ import java.util.function.Supplier;
 public class Hood extends SubsystemBase {
   private TalonFX hoodMotor;
   private StatusSignal<Angle> hoodPosition;
+  private final StatusSignal<Current> hoodCurrent;
+  private final StatusSignal<AngularVelocity> hoodVelocity;
 
   private SingleJointedArmSim hoodSim;
 
@@ -46,6 +52,8 @@ public class Hood extends SubsystemBase {
     zeroHood();
 
     hoodPosition = hoodMotor.getPosition();
+    hoodCurrent = hoodMotor.getStatorCurrent();
+    hoodVelocity = hoodMotor.getVelocity();
 
     hoodSim =
         new SingleJointedArmSim(
@@ -61,6 +69,27 @@ public class Hood extends SubsystemBase {
 
   private void zeroHood() {
     hoodMotor.setPosition(0);
+  }
+
+  public Command zeroHoodCommand() {
+    return Commands.run(
+            () -> {
+              hoodMotor.set(HoodConstants.hoodZeroSpeed);
+
+              hoodCurrent.refresh();
+              hoodVelocity.refresh();
+            })
+        .until(
+            () ->
+                hoodCurrent.getValue().in(Amps) > HoodConstants.hoodStallCurrent
+                    && Math.abs(hoodVelocity.getValue().in(RotationsPerSecond))
+                        < HoodConstants.hoodStallVelocity)
+        .andThen(
+            () -> {
+              hoodMotor.stopMotor();
+              zeroHood();
+            })
+        .withName("Zero Hood Command");
   }
 
   @Logged(name = "Hood Angle")
@@ -89,9 +118,8 @@ public class Hood extends SubsystemBase {
     hoodMotor.set(speed);
   }
 
-  public void setTargetAngle(Angle targetAngle) {
-    this.targetAngle = targetAngle;
-    hoodMotor.setControl(motionMagicRequest.withPosition(targetAngle.in(Rotations)));
+  public void setTargetAngle(Angle targetHoodAngle) {
+    targetAngle = targetHoodAngle;
   }
 
   public Angle getTargetAngle() {
@@ -104,9 +132,9 @@ public class Hood extends SubsystemBase {
 
   public Command moveToAngle(Angle targetPose) {
     return run(() -> {
-          hoodMotor.setControl(motionMagicRequest.withPosition(targetPose.in(Rotations)));
+          hoodMotor.setControl(motionMagicRequest.withPosition(targetPose));
         })
-        .withName("Move Turret to Angle");
+        .withName("Move Hood to Angle");
   }
 
   public Command aimForTarget(
@@ -129,6 +157,10 @@ public class Hood extends SubsystemBase {
   @Override
   public void periodic() {
     hoodPosition.refresh();
+
+    hoodMotor.setControl(motionMagicRequest.withPosition(targetAngle));
+    SmartDashboard.putNumber("Hood/targetAngle", targetAngle.in(Degrees));
+
     SmartDashboard.putNumber("Hood/Hood Angle", getHoodAngle().in(Degrees));
   }
 

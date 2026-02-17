@@ -1,7 +1,3 @@
-// Copyright (c) FIRST and other WPILib contributors.
-// Open Source Software; you can modify and/or share it under the terms of
-// the WPILib BSD license file in the root directory of this project.
-
 package frc.robot;
 
 import static edu.wpi.first.units.Units.Degrees;
@@ -10,6 +6,7 @@ import static edu.wpi.first.units.Units.DegreesPerSecondPerSecond;
 import static edu.wpi.first.units.Units.FeetPerSecond;
 import static edu.wpi.first.units.Units.Inches;
 import static edu.wpi.first.units.Units.Meters;
+import static edu.wpi.first.units.Units.MetersPerSecond;
 import static edu.wpi.first.units.Units.Rotations;
 import static edu.wpi.first.units.Units.RotationsPerSecond;
 import static edu.wpi.first.units.Units.RotationsPerSecondPerSecond;
@@ -167,21 +164,25 @@ public final class Constants {
     public static final int armMainID = 14;
     public static final int armFollowerID = 15;
     public static final int intakeID = 16;
-    public static final int armEncoderID = 17;
+    public static final int armMagnetID = 17;
 
-    public static final double armGearRatio = 3.0;
+    public static final double armGearRatio = (5 / 1) * (36 / 10);
+    // 111.182298 - 15.025 = 96;
+    public static final Angle minPosition = Degrees.of(0.0);
+    public static final Angle maxPosition = Degrees.of(96.157298);
 
-    public static final Angle maxPosition = Rotations.of(1.0);
-    public static final Angle minPosition = Rotations.of(0.0);
-
-    public static final Angle downPosition = Rotations.of(1.0);
-    public static final Angle upPosition = Rotations.of(0.0);
+    public static final Angle downPosition = maxPosition;
+    public static final Angle upPosition = minPosition;
 
     public static final Angle armDownPositionTolerance = maxPosition.plus(minPosition).div(2);
 
     public static final Angle armMagnetOffset = Rotations.of(0);
 
     public static final double intakeSpeed = .353;
+
+    public static final double armStallCurrent = 6.7; // amps
+    public static final double armStallVelocity = 0.1353; // rps
+    public static final double armZeroSpeed = -0.20;
 
     public static final MotionMagicConfigs motionMagicConfigs =
         new MotionMagicConfigs()
@@ -516,13 +517,17 @@ public final class Constants {
   }
 
   public static class HoodConstants {
-    public static final int hoodMotorID = 21;
+    public static final int hoodMotorID = 21; // 21
+
+    public static final double hoodStallCurrent = 6.7; // amps
+    public static final double hoodStallVelocity = 0.1353; // rps
+    public static final double hoodZeroSpeed = -0.10;
 
     public static final Angle minAngle = Degrees.of(21.448);
     public static final Angle maxAngle = Degrees.of(59.231);
 
-    public static final double hoodGearRatio =
-        ((48 / 12) * (30 / 15) * (15 / 10)) / ((maxAngle.minus(minAngle)).in(Degrees) / 360);
+    public static final double hoodGearRatio = ((48 / 12) * (30 / 15) * (15 / 10));
+    // / ((maxAngle.minus(minAngle)).in(Degrees) / 360);
 
     public static final MotionMagicConfigs motionMagicConfigs =
         new MotionMagicConfigs()
@@ -570,9 +575,63 @@ public final class Constants {
   }
 
   public static class SpindexerConstants {
-    public static final int SpindexerMotorID = 22;
-    public static final int SpindexerLaserID = 23;
-    public static final double SpindexerMotorSpeed = 0.5;
-    public static final double SpindexerDistance = 100;
+    public static final int spindexerMotorID = 22;
+    public static final int kickerMotorID = 23;
+    public static final double spindexerMotorSpeed = 0.5;
+    public static final double kickerMotorSpeed = 0.5;
+
+    public static final MotorOutputConfigs motorOutputConfigs =
+        new MotorOutputConfigs()
+            .withInverted(InvertedValue.CounterClockwise_Positive)
+            .withNeutralMode(NeutralModeValue.Brake);
+
+    public static final CurrentLimitsConfigs currentLimitConfigs =
+        new CurrentLimitsConfigs().withSupplyCurrentLimit(45).withSupplyCurrentLimitEnable(true);
+
+    public static final TalonFXConfiguration spindexerConfigs =
+        new TalonFXConfiguration()
+            .withCurrentLimits(currentLimitConfigs)
+            .withMotorOutput(motorOutputConfigs);
+  }
+
+  public static class ShooterConstants {
+    public static final int shooterMotorID = 24;
+
+    public static final double shooterGearRatio = 1;
+    public static final Distance flyWheelRadius = Inches.of(2.0);
+
+    public static final LinearVelocity shooterSpeedTolerance = MetersPerSecond.of(0.1);
+
+    public static final MotionMagicConfigs motionMagicConfigs =
+        new MotionMagicConfigs().withMotionMagicAcceleration(0.0).withMotionMagicJerk(0.0);
+
+    public static final Slot0Configs slot0Configs =
+        new Slot0Configs()
+            .withKS(0.00)
+            .withKV(0.00)
+            .withKA(0.00)
+            .withKP(0.0)
+            .withKI(0.00)
+            .withKD(0.00)
+            .withStaticFeedforwardSign(StaticFeedforwardSignValue.UseVelocitySign);
+
+    public static final FeedbackConfigs feedbackConfigs =
+        new FeedbackConfigs().withSensorToMechanismRatio(shooterGearRatio);
+
+    public static final MotorOutputConfigs motorOutputConfigs =
+        new MotorOutputConfigs()
+            .withInverted(
+                InvertedValue.CounterClockwise_Positive) // needs to spin left when wires up
+            .withNeutralMode(NeutralModeValue.Coast);
+    public static final CurrentLimitsConfigs currentLimitConfigs =
+        new CurrentLimitsConfigs().withSupplyCurrentLimit(45).withSupplyCurrentLimitEnable(true);
+
+    public static final TalonFXConfiguration shooterConfigs =
+        new TalonFXConfiguration()
+            .withCurrentLimits(currentLimitConfigs)
+            .withSlot0(slot0Configs)
+            .withMotionMagic(motionMagicConfigs)
+            .withFeedback(feedbackConfigs)
+            .withMotorOutput(motorOutputConfigs);
   }
 }
