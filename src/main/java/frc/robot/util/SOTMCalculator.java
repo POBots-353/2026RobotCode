@@ -14,17 +14,19 @@ import edu.wpi.first.units.measure.LinearVelocity;
 import edu.wpi.first.units.measure.Time;
 import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 import frc.robot.Constants.SOTMConstants;
+import frc.robot.Constants.SimConstants;
 import frc.robot.Constants.TurretConstants;
 import frc.robot.subsystems.Swerve;
 import frc.robot.subsystems.Turret;
 
 public class SOTMCalculator {
-  public static InterpolatingTreeMap<Double, Rotation2d> hoodAngleMap = SOTMConstants.hoodAngleMap;
-  public static InterpolatingDoubleTreeMap shooterSpeedMap = SOTMConstants.shooterSpeedMap;
-  public static InterpolatingDoubleTreeMap timeOfFlightMap = SOTMConstants.timeOfFlightMap;
+  //   public static InterpolatingTreeMap<Double, Rotation2d> hoodAngleMap =
+  // SOTMConstants.hoodAngleMap;
+  //   public static InterpolatingDoubleTreeMap shooterSpeedMap = SOTMConstants.shooterSpeedMap;
+  //   public static InterpolatingDoubleTreeMap timeOfFlightMap = SOTMConstants.timeOfFlightMap;
 
   private static Translation2d robotToTurret2d = TurretConstants.robotToTurret.toTranslation2d();
-  public static Time accelTime = Seconds.of(0.1353);
+//   public static Time accelTime = Seconds.of(SimConstants.loopPeriodSecs);
 
   public record ShootingParameters(
       LinearVelocity shooterSpeed,
@@ -38,8 +40,16 @@ public class SOTMCalculator {
       Pose2d target,
       double fieldAccelX,
       double fieldAccelY,
-      ChassisSpeeds fieldChassisSpeeds) {
+      ChassisSpeeds fieldChassisSpeeds,
+      boolean isScoring) {
     Pose2d targetPose = target;
+
+    InterpolatingTreeMap<Double, Rotation2d> hoodAngleMap =
+        isScoring ? SOTMConstants.hoodAngleMapScoring : SOTMConstants.hoodAngleMapFerrying;
+    InterpolatingDoubleTreeMap shooterSpeedMap =
+        isScoring ? SOTMConstants.shooterSpeedMapScoring : SOTMConstants.shooterSpeedMapFerrying;
+    InterpolatingDoubleTreeMap timeOfFlightMap =
+        isScoring ? SOTMConstants.timeOfFlightMapScoring : SOTMConstants.timeOfFlightMapFerrying;
 
     Pose2d robotPose = swerve.getRobotPose();
 

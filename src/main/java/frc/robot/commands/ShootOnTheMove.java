@@ -22,6 +22,7 @@ import frc.robot.subsystems.Turret;
 import frc.robot.util.RobotVisualization;
 import frc.robot.util.SOTMCalculator;
 import frc.robot.util.SOTMCalculator.ShootingParameters;
+import java.util.function.BooleanSupplier;
 import java.util.function.Supplier;
 
 /* You should consider using the more terse Command factories API instead https://docs.wpilib.org/en/stable/docs/software/commandbased/organizing-command-based.html#defining-commands */
@@ -50,6 +51,7 @@ public class ShootOnTheMove extends Command {
 
   private double startTime;
   private boolean isVisualizationFirstShot = true;
+  private BooleanSupplier scoringMode;
 
   public ShootOnTheMove(
       Swerve swerve,
@@ -58,7 +60,8 @@ public class ShootOnTheMove extends Command {
       Shooter shooter,
       Spindexer spindexer,
       Supplier<Pose2d> targetPoseSupplier,
-      RobotVisualization robotVisualization) {
+      RobotVisualization robotVisualization,
+      BooleanSupplier scoringMode) {
     this.swerve = swerve;
     this.turret = turret;
     this.hood = hood;
@@ -66,6 +69,7 @@ public class ShootOnTheMove extends Command {
     this.spindexer = spindexer;
     this.targetPoseSupplier = targetPoseSupplier;
     this.robotVisualization = robotVisualization;
+    this.scoringMode = scoringMode;
     addRequirements(hood, turret, shooter);
   }
 
@@ -96,7 +100,13 @@ public class ShootOnTheMove extends Command {
 
     ShootingParameters shootingParameters =
         SOTMCalculator.getParameters(
-            swerve, turret, targetPoseSupplier.get(), fieldAccelX, fieldAccelY, fieldSpeeds);
+            swerve,
+            turret,
+            targetPoseSupplier.get(),
+            fieldAccelX,
+            fieldAccelY,
+            fieldSpeeds,
+            scoringMode.getAsBoolean());
 
     turret.moveToAngle(shootingParameters.turretAngle());
     hood.moveToAngle(shootingParameters.hoodAngle());
@@ -115,7 +125,7 @@ public class ShootOnTheMove extends Command {
       if (RobotBase.isSimulation()) { // if sim and ready to shoot
         if (isVisualizationFirstShot
             || ((Timer.getFPGATimestamp() - startTime) > 1 / SimConstants.fuelsPerSecond)) {
-          robotVisualization.shootFuel();
+          robotVisualization.shootFuel(shootingParameters);
 
           startTime = Timer.getFPGATimestamp();
           isVisualizationFirstShot = false;

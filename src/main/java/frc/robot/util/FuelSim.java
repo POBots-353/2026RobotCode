@@ -725,7 +725,7 @@ public class FuelSim {
     private final int exitVelXMult;
 
     private int score = 0;
-    private boolean onlyScoreWhenActive = false;
+    private boolean onlyCountWhenActive = false;
 
     private Hub(Translation2d center, Translation3d exit, int exitVelXMult) {
       this.center = center;
@@ -733,15 +733,15 @@ public class FuelSim {
       this.exitVelXMult = exitVelXMult;
     }
 
-    public void toggleScoreWhenActive(boolean toggle) {
-      onlyScoreWhenActive = toggle;
+    public void toggleCountWhenActive(boolean toggle) {
+      onlyCountWhenActive = toggle;
     }
 
     private void handleHubInteraction(Fuel fuel) {
       if (didFuelScore(fuel)) {
         fuel.pos = exit;
         fuel.vel = getDispersalVelocity();
-        if (onlyScoreWhenActive) {
+        if (onlyCountWhenActive) {
           if (HubTracker.isActive()) score++;
         } else {
           score++;

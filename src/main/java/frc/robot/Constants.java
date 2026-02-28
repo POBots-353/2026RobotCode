@@ -72,10 +72,19 @@ public final class Constants {
   }
 
   public static class SOTMConstants {
-    public static InterpolatingTreeMap<Double, Rotation2d> hoodAngleMap =
+    public static InterpolatingTreeMap<Double, Rotation2d> hoodAngleMapScoring =
         new InterpolatingTreeMap<>(InverseInterpolator.forDouble(), Rotation2d::interpolate);
-    public static InterpolatingDoubleTreeMap shooterSpeedMap = new InterpolatingDoubleTreeMap();
-    public static InterpolatingDoubleTreeMap timeOfFlightMap = new InterpolatingDoubleTreeMap();
+    public static InterpolatingDoubleTreeMap shooterSpeedMapScoring =
+        new InterpolatingDoubleTreeMap();
+    public static InterpolatingDoubleTreeMap timeOfFlightMapScoring =
+        new InterpolatingDoubleTreeMap();
+
+    public static InterpolatingTreeMap<Double, Rotation2d> hoodAngleMapFerrying =
+        new InterpolatingTreeMap<>(InverseInterpolator.forDouble(), Rotation2d::interpolate);
+    public static InterpolatingDoubleTreeMap shooterSpeedMapFerrying =
+        new InterpolatingDoubleTreeMap();
+    public static InterpolatingDoubleTreeMap timeOfFlightMapFerrying =
+        new InterpolatingDoubleTreeMap();
 
     // static {
     //   hoodAngleMap.put(1.623, Rotation2d.fromDegrees(21.448));
@@ -107,59 +116,114 @@ public final class Constants {
     // }
 
     static {
-      hoodAngleMap.put(1.681, Rotation2d.fromDegrees(21.448));
-      hoodAngleMap.put(2.016, Rotation2d.fromDegrees(21.972));
-      hoodAngleMap.put(2.338, Rotation2d.fromDegrees(22.648));
-      hoodAngleMap.put(2.665, Rotation2d.fromDegrees(24.122));
-      hoodAngleMap.put(3.034, Rotation2d.fromDegrees(25.658));
-      hoodAngleMap.put(3.363, Rotation2d.fromDegrees(26.333));
-      hoodAngleMap.put(3.711, Rotation2d.fromDegrees(27.562));
-      hoodAngleMap.put(4.061, Rotation2d.fromDegrees(29.036));
-      hoodAngleMap.put(4.324, Rotation2d.fromDegrees(29.835));
-      hoodAngleMap.put(4.619, Rotation2d.fromDegrees(30.449));
-      hoodAngleMap.put(5.010, Rotation2d.fromDegrees(32.046));
-      hoodAngleMap.put(5.366, Rotation2d.fromDegrees(33.275));
-      hoodAngleMap.put(5.610, Rotation2d.fromDegrees(34.319));
-      hoodAngleMap.put(6.051, Rotation2d.fromDegrees(35.794));
-      hoodAngleMap.put(6.369, Rotation2d.fromDegrees(36.408));
-      hoodAngleMap.put(6.704, Rotation2d.fromDegrees(37.002));
-      hoodAngleMap.put(7.022, Rotation2d.fromDegrees(36.531));
+      hoodAngleMapScoring.put(1.681, Rotation2d.fromDegrees(21.448));
+      hoodAngleMapScoring.put(2.016, Rotation2d.fromDegrees(21.972));
+      hoodAngleMapScoring.put(2.338, Rotation2d.fromDegrees(22.648));
+      hoodAngleMapScoring.put(2.665, Rotation2d.fromDegrees(24.122));
+      hoodAngleMapScoring.put(3.034, Rotation2d.fromDegrees(25.658));
+      hoodAngleMapScoring.put(3.363, Rotation2d.fromDegrees(26.333));
+      hoodAngleMapScoring.put(3.711, Rotation2d.fromDegrees(27.562));
+      hoodAngleMapScoring.put(4.061, Rotation2d.fromDegrees(29.036));
+      hoodAngleMapScoring.put(4.324, Rotation2d.fromDegrees(29.835));
+      hoodAngleMapScoring.put(4.619, Rotation2d.fromDegrees(30.449));
+      hoodAngleMapScoring.put(5.010, Rotation2d.fromDegrees(32.046));
+      hoodAngleMapScoring.put(5.366, Rotation2d.fromDegrees(33.275));
+      hoodAngleMapScoring.put(5.610, Rotation2d.fromDegrees(34.319));
+      hoodAngleMapScoring.put(6.051, Rotation2d.fromDegrees(35.794));
+      hoodAngleMapScoring.put(6.369, Rotation2d.fromDegrees(36.408));
+      hoodAngleMapScoring.put(6.704, Rotation2d.fromDegrees(37.002));
+      hoodAngleMapScoring.put(7.022, Rotation2d.fromDegrees(36.531));
 
-      shooterSpeedMap.put(1.681, 5.795);
-      shooterSpeedMap.put(2.016, 5.940);
-      shooterSpeedMap.put(2.338, 6.229);
-      shooterSpeedMap.put(2.665, 6.422);
-      shooterSpeedMap.put(3.034, 6.711);
-      shooterSpeedMap.put(3.363, 6.903);
-      shooterSpeedMap.put(3.711, 7.096);
-      shooterSpeedMap.put(4.061, 7.337);
-      shooterSpeedMap.put(4.324, 7.529);
-      shooterSpeedMap.put(4.619, 7.674);
-      shooterSpeedMap.put(5.010, 7.915);
-      shooterSpeedMap.put(5.366, 8.156);
-      shooterSpeedMap.put(5.610, 8.252);
-      shooterSpeedMap.put(6.051, 8.445);
-      shooterSpeedMap.put(6.369, 8.637);
-      shooterSpeedMap.put(6.704, 8.830);
-      shooterSpeedMap.put(7.022, 9.023);
+      shooterSpeedMapScoring.put(1.681, 5.795);
+      shooterSpeedMapScoring.put(2.016, 5.940);
+      shooterSpeedMapScoring.put(2.338, 6.229);
+      shooterSpeedMapScoring.put(2.665, 6.422);
+      shooterSpeedMapScoring.put(3.034, 6.711);
+      shooterSpeedMapScoring.put(3.363, 6.903);
+      shooterSpeedMapScoring.put(3.711, 7.096);
+      shooterSpeedMapScoring.put(4.061, 7.337);
+      shooterSpeedMapScoring.put(4.324, 7.529);
+      shooterSpeedMapScoring.put(4.619, 7.674);
+      shooterSpeedMapScoring.put(5.010, 7.915);
+      shooterSpeedMapScoring.put(5.366, 8.156);
+      shooterSpeedMapScoring.put(5.610, 8.252);
+      shooterSpeedMapScoring.put(6.051, 8.445);
+      shooterSpeedMapScoring.put(6.369, 8.637);
+      shooterSpeedMapScoring.put(6.704, 8.830);
+      shooterSpeedMapScoring.put(7.022, 9.023);
 
-      timeOfFlightMap.put(1.695, 0.893);
-      timeOfFlightMap.put(2.016, 0.924);
-      timeOfFlightMap.put(2.338, 0.985);
-      timeOfFlightMap.put(2.665, 1.013);
-      timeOfFlightMap.put(3.034, 1.059);
-      timeOfFlightMap.put(3.363, 1.093);
-      timeOfFlightMap.put(3.711, 1.118);
-      timeOfFlightMap.put(4.061, 1.147);
-      timeOfFlightMap.put(4.324, 1.175);
-      timeOfFlightMap.put(4.619, 1.195);
-      timeOfFlightMap.put(5.010, 1.216);
-      timeOfFlightMap.put(5.366, 1.242);
-      timeOfFlightMap.put(5.610, 1.241);
-      timeOfFlightMap.put(6.051, 1.249);
-      timeOfFlightMap.put(6.365, 1.273);
-      timeOfFlightMap.put(6.704, 1.295);
-      timeOfFlightMap.put(7.022, 1.341);
+      timeOfFlightMapScoring.put(1.695, 0.893);
+      timeOfFlightMapScoring.put(2.016, 0.924);
+      timeOfFlightMapScoring.put(2.338, 0.985);
+      timeOfFlightMapScoring.put(2.665, 1.013);
+      timeOfFlightMapScoring.put(3.034, 1.059);
+      timeOfFlightMapScoring.put(3.363, 1.093);
+      timeOfFlightMapScoring.put(3.711, 1.118);
+      timeOfFlightMapScoring.put(4.061, 1.147);
+      timeOfFlightMapScoring.put(4.324, 1.175);
+      timeOfFlightMapScoring.put(4.619, 1.195);
+      timeOfFlightMapScoring.put(5.010, 1.216);
+      timeOfFlightMapScoring.put(5.366, 1.242);
+      timeOfFlightMapScoring.put(5.610, 1.241);
+      timeOfFlightMapScoring.put(6.051, 1.249);
+      timeOfFlightMapScoring.put(6.365, 1.273);
+      timeOfFlightMapScoring.put(6.704, 1.295);
+      timeOfFlightMapScoring.put(7.022, 1.341);
+
+      // ferrying maps
+      hoodAngleMapFerrying.put(1.681, Rotation2d.fromDegrees(22.448));
+      hoodAngleMapFerrying.put(2.016, Rotation2d.fromDegrees(22.972));
+      hoodAngleMapFerrying.put(2.338, Rotation2d.fromDegrees(23.648));
+      hoodAngleMapFerrying.put(2.665, Rotation2d.fromDegrees(25.122));
+      hoodAngleMapFerrying.put(3.034, Rotation2d.fromDegrees(26.658));
+      hoodAngleMapFerrying.put(3.363, Rotation2d.fromDegrees(27.333));
+      hoodAngleMapFerrying.put(3.711, Rotation2d.fromDegrees(28.562));
+      hoodAngleMapFerrying.put(4.061, Rotation2d.fromDegrees(30.036));
+      hoodAngleMapFerrying.put(4.324, Rotation2d.fromDegrees(30.835));
+      hoodAngleMapFerrying.put(4.619, Rotation2d.fromDegrees(31.449));
+      hoodAngleMapFerrying.put(5.010, Rotation2d.fromDegrees(33.046));
+      hoodAngleMapFerrying.put(5.366, Rotation2d.fromDegrees(34.275));
+      hoodAngleMapFerrying.put(5.610, Rotation2d.fromDegrees(35.319));
+      hoodAngleMapFerrying.put(6.051, Rotation2d.fromDegrees(36.794));
+      hoodAngleMapFerrying.put(6.369, Rotation2d.fromDegrees(37.408));
+      hoodAngleMapFerrying.put(6.704, Rotation2d.fromDegrees(38.002));
+      hoodAngleMapFerrying.put(7.022, Rotation2d.fromDegrees(37.531));
+
+      shooterSpeedMapFerrying.put(1.681, 5.595);
+      shooterSpeedMapFerrying.put(2.016, 5.740);
+      shooterSpeedMapFerrying.put(2.338, 6.029);
+      shooterSpeedMapFerrying.put(2.665, 6.222);
+      shooterSpeedMapFerrying.put(3.034, 6.511);
+      shooterSpeedMapFerrying.put(3.363, 6.703);
+      shooterSpeedMapFerrying.put(3.711, 6.896);
+      shooterSpeedMapFerrying.put(4.061, 7.137);
+      shooterSpeedMapFerrying.put(4.324, 7.329);
+      shooterSpeedMapFerrying.put(4.619, 7.474);
+      shooterSpeedMapFerrying.put(5.010, 7.715);
+      shooterSpeedMapFerrying.put(5.366, 7.956);
+      shooterSpeedMapFerrying.put(5.610, 8.052);
+      shooterSpeedMapFerrying.put(6.051, 8.245);
+      shooterSpeedMapFerrying.put(6.369, 8.437);
+      shooterSpeedMapFerrying.put(6.704, 8.630);
+      shooterSpeedMapFerrying.put(7.022, 8.823);
+
+      timeOfFlightMapFerrying.put(1.695, 0.893 * 1.5);
+      timeOfFlightMapFerrying.put(2.016, 0.924 * 1.5);
+      timeOfFlightMapFerrying.put(2.338, 0.985 * 1.5);
+      timeOfFlightMapFerrying.put(2.665, 1.013 * 1.5);
+      timeOfFlightMapFerrying.put(3.034, 1.059 * 1.5);
+      timeOfFlightMapFerrying.put(3.363, 1.093 * 1.5);
+      timeOfFlightMapFerrying.put(3.711, 1.118 * 1.5);
+      timeOfFlightMapFerrying.put(4.061, 1.147 * 1.5);
+      timeOfFlightMapFerrying.put(4.324, 1.175 * 1.5);
+      timeOfFlightMapFerrying.put(4.619, 1.195 * 1.5);
+      timeOfFlightMapFerrying.put(5.010, 1.216 * 1.5);
+      timeOfFlightMapFerrying.put(5.366, 1.242 * 1.5);
+      timeOfFlightMapFerrying.put(5.610, 1.241 * 1.5);
+      timeOfFlightMapFerrying.put(6.051, 1.249 * 1.5);
+      timeOfFlightMapFerrying.put(6.365, 1.273 * 1.5);
+      timeOfFlightMapFerrying.put(6.704, 1.295 * 1.5);
+      timeOfFlightMapFerrying.put(7.022, 1.341 * 1.5);
     }
   }
 
@@ -191,13 +255,57 @@ public final class Constants {
     public static final double steerKA = 0.0;
   }
 
+  public static class ClimbConstants {
+    public static final Pose2d rightClimbPose =
+        new Pose2d(0.9172529578208923, 2.905292844772339, Rotation2d.kCW_90deg);
+    public static final Pose2d leftClimbPose =
+        new Pose2d(1.114691138267517, 4.505441703796387, Rotation2d.kCCW_90deg);
+
+    public static final int climberMotorID = 25;
+    public static final double climbSpeed = 0.80;
+
+    public static final Distance maxHeight = Inches.of(9);
+    public static final Distance minHeight = Inches.of(0);
+
+    public static final double drumRadiusInches = 0.5;
+
+    public static final double climberGearBox = (25 / 1);
+
+    public static final double climberSensorToMechanismRatio =
+        climberGearBox / (2 * Math.PI * Units.inchesToMeters(drumRadiusInches));
+
+    public static final FeedbackConfigs feedbackConfigs =
+        new FeedbackConfigs().withSensorToMechanismRatio(climberSensorToMechanismRatio);
+
+    public static final MotorOutputConfigs motorOutputConfigs =
+        new MotorOutputConfigs()
+            .withInverted(InvertedValue.CounterClockwise_Positive)
+            .withNeutralMode(NeutralModeValue.Brake);
+
+    public static final SoftwareLimitSwitchConfigs softwareLimitSwitchConfigs =
+        new SoftwareLimitSwitchConfigs()
+            .withForwardSoftLimitThreshold(maxHeight.in(Meters))
+            .withForwardSoftLimitEnable(true)
+            .withReverseSoftLimitThreshold(minHeight.in(Meters))
+            .withReverseSoftLimitEnable(true);
+    public static final CurrentLimitsConfigs currentLimitConfigs =
+        new CurrentLimitsConfigs().withStatorCurrentLimit(45).withStatorCurrentLimitEnable(true);
+
+    public static final TalonFXConfiguration climberConfigs =
+        new TalonFXConfiguration()
+            .withCurrentLimits(currentLimitConfigs)
+            .withFeedback(feedbackConfigs)
+            .withMotorOutput(motorOutputConfigs)
+            .withSoftwareLimitSwitch(softwareLimitSwitchConfigs);
+  }
+
   public static class IntakeConstants {
     public static final int armMainID = 14;
     public static final int armFollowerID = 15;
     public static final int intakeID = 16;
     public static final int armMagnetID = 17;
 
-    public static final double armGearRatio = (5 / 1) * (36 / 10);
+    public static final double armGearRatio = 36 / 12;
     // 111.182298 - 15.025 = 96;
     public static final Angle minPosition = Degrees.of(0.0);
     public static final Angle maxPosition = Degrees.of(96.157298);
@@ -217,8 +325,8 @@ public final class Constants {
 
     public static final MotionMagicConfigs motionMagicConfigs =
         new MotionMagicConfigs()
-            .withMotionMagicCruiseVelocity(RotationsPerSecond.of(0))
-            .withMotionMagicAcceleration(RotationsPerSecondPerSecond.of(0));
+            .withMotionMagicCruiseVelocity(RotationsPerSecond.of(40))
+            .withMotionMagicAcceleration(RotationsPerSecondPerSecond.of(80));
 
     public static final Slot0Configs slot0Configs =
         new Slot0Configs()
@@ -226,10 +334,11 @@ public final class Constants {
             .withKV(0.0)
             .withKA(0.0)
             .withKG(0.00)
-            .withKP(0.0)
+            .withKP(20.0)
             .withKI(0.00)
             .withKD(0.00)
-            .withStaticFeedforwardSign(StaticFeedforwardSignValue.UseVelocitySign);
+            .withGravityType(GravityTypeValue.Arm_Cosine)
+            .withStaticFeedforwardSign(StaticFeedforwardSignValue.UseClosedLoopSign);
 
     public static final FeedbackConfigs feedbackConfigs =
         new FeedbackConfigs().withSensorToMechanismRatio(armGearRatio);
@@ -392,14 +501,15 @@ public final class Constants {
             new Pose2d(2.0, 3.118569850921631, Rotation2d.kZero),
             new Pose2d(2.0, 1.4229397773742676, Rotation2d.kZero));
 
+    public static final Distance TRENCH_LENGTH = Inches.of(47);
     public static final Distance TRENCH_BUMP_X = Inches.of(181.56);
     private static final Distance TRENCH_WIDTH = Inches.of(49.86);
     private static final Distance BUMP_INSET = TRENCH_WIDTH.plus(Inches.of(12));
     private static final Distance BUMP_LENGTH = Inches.of(73);
     public static final Distance BUMP_CENTER_Y = TRENCH_WIDTH.plus(BUMP_LENGTH.div(2));
 
-    private static final Distance TRENCH_ZONE_EXTENSION = Inches.of(70);
-    private static final Distance BUMP_ZONE_EXTENSION = Inches.of(60);
+    public static final Distance TRENCH_ZONE_EXTENSION = Inches.of(70);
+    public static final Distance BUMP_ZONE_EXTENSION = Inches.of(60);
     private static final Distance TRENCH_BUMP_ZONE_TRANSITION =
         TRENCH_WIDTH.plus(BUMP_INSET).div(2);
 
@@ -549,9 +659,11 @@ public final class Constants {
   public static class HoodConstants {
     public static final int hoodMotorID = 21; // 21
 
-    public static final double hoodStallCurrent = 8; // amps
+    public static final double hoodStallCurrent = 10; // amps
     public static final double hoodStallVelocity = 0.1353; // rps
     public static final double hoodZeroSpeed = -0.15;
+
+    public static final double slowHoodSpeed = 0.20;
 
     public static final Angle minAngle = Degrees.of(21.448);
     public static final Angle maxAngle = Degrees.of(59.231);
@@ -610,6 +722,12 @@ public final class Constants {
     public static final int kickerMotorID = 23;
     public static final double spindexerMotorSpeed = 0.5;
     public static final double kickerMotorSpeed = 0.9;
+
+    public static final double spindexerIdleSpeed = -0.15;
+    public static final double kickerIdleSpeed = -0.15;
+
+    public static final double reverseKickerSpeed = -0.30;
+    public static final double reverseSpindexerSpeed = -0.30;
 
     public static final MotorOutputConfigs motorOutputConfigs =
         new MotorOutputConfigs()

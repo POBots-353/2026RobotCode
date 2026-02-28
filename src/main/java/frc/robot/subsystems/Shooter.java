@@ -10,10 +10,13 @@ import com.ctre.phoenix6.controls.VelocityVoltage;
 import com.ctre.phoenix6.hardware.TalonFX;
 import edu.wpi.first.units.measure.AngularVelocity;
 import edu.wpi.first.units.measure.LinearVelocity;
+import edu.wpi.first.wpilibj.RobotBase;
 import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
+import frc.robot.Constants.SOTMConstants;
 import frc.robot.Constants.ShooterConstants;
+import java.util.function.DoubleSupplier;
 
 public class Shooter extends SubsystemBase {
   /** Creates a new Shooter. */
@@ -62,11 +65,11 @@ public class Shooter extends SubsystemBase {
   }
 
   public boolean shooterAtSetPoint(LinearVelocity goalSpeed) {
+    if(RobotBase.isSimulation()) return true;
     LinearVelocity currentSpeed = angularToLinearVelocity(getCurrentVelocity());
 
     return Math.abs(currentSpeed.in(MetersPerSecond) - goalSpeed.in(MetersPerSecond))
-        < ShooterConstants.shooterSpeedTolerance.in(MetersPerSecond);
-    // return true;
+    < ShooterConstants.shooterSpeedTolerance.in(MetersPerSecond);
   }
 
   public Command runMotor(double speed) {
@@ -77,18 +80,16 @@ public class Shooter extends SubsystemBase {
     shooterMotor.set(0.0);
   }
 
-  // public void logSolution(ShotSolution solution) {
-  //   currentShotSolution = solution;
-  //   setGoalSpeed(solution.exitVelocity());
-  // }
-
-  // public ShotSolution getShotSolution() {
-  //   return currentShotSolution;
-  // }
-
-  // public LinearVelocity getExitVelocity() {
-  //   return MetersPerSecond.of(9.353);
-  // }
+  public Command manualInterpolatedShoot(DoubleSupplier turretToHubMeters) {
+    return run(
+        () ->
+            shooterMotor.setControl(
+                velocityRequest.withVelocity(
+                    linearToAngularVelocity(
+                        MetersPerSecond.of(
+                            SOTMConstants.shooterSpeedMapScoring.get(
+                                turretToHubMeters.getAsDouble()))))));
+  }
 
   @Override
   public void periodic() {

@@ -1,6 +1,7 @@
 package frc.robot.util;
 
 import static edu.wpi.first.units.Units.Degrees;
+import static edu.wpi.first.units.Units.Meters;
 import static edu.wpi.first.units.Units.Radians;
 
 import edu.wpi.first.epilogue.Logged;
@@ -16,10 +17,12 @@ import frc.robot.Constants.FieldConstants;
 import frc.robot.Constants.HoodConstants;
 import frc.robot.Constants.SimConstants;
 import frc.robot.Constants.TurretConstants;
+import frc.robot.subsystems.Climber;
 import frc.robot.subsystems.Hood;
 import frc.robot.subsystems.Shooter;
 import frc.robot.subsystems.Swerve;
 import frc.robot.subsystems.Turret;
+import frc.robot.util.SOTMCalculator.ShootingParameters;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -28,16 +31,19 @@ public class RobotVisualization {
   private Hood hood;
   private Swerve swerve;
   private Shooter shooter;
+  private Climber climber;
 
   private static int fuelStored = 8;
 
   private static List<FuelProjectile> activeShots = new ArrayList<>();
 
-  public RobotVisualization(Turret turret, Hood hood, Swerve swerve, Shooter shooter) {
+  public RobotVisualization(
+      Turret turret, Hood hood, Swerve swerve, Shooter shooter, Climber climber) {
     this.turret = turret;
     this.hood = hood;
     this.swerve = swerve;
     this.shooter = shooter;
+    this.climber = climber;
   }
 
   @Logged(name = "Turret")
@@ -53,6 +59,15 @@ public class RobotVisualization {
             new Transform3d(
                 new Translation3d(0.121, -0.0025, 0.072),
                 new Rotation3d(0.0, hood.getHoodAngle().in(Radians), 0.0)));
+  }
+
+  @Logged(name = "Climber Poses")
+  public Pose3d[] getClimberPose3d() {
+    return new Pose3d[] {
+      new Pose3d(
+          -0.2861912, 0.0635, 0.104775 + climber.getClimberHeight().in(Meters), Rotation3d.kZero),
+      new Pose3d(-0.2861912, 0.0635, 0.104775, Rotation3d.kZero)
+    };
   }
 
   @Logged(name = "Fuel Stored")
@@ -93,7 +108,7 @@ public class RobotVisualization {
         .withName("ShootFuelGatherData");
   }
 
-  public void shootFuel() {
+  public void shootFuel(ShootingParameters shootingParameters) {
     if (RobotBase.isReal()) return;
     if (fuelStored < 1) return;
 
@@ -110,7 +125,7 @@ public class RobotVisualization {
     // once turret is tuned better
     FuelSim.getInstance()
         .launchFuel(
-            shooter.angularToLinearVelocity(shooter.getCurrentVelocity()),
+            shootingParameters.shooterSpeed(),
             Radians.of(Math.PI / 2).minus(hood.getHoodAngle()),
             swerve.getRobotPose().getRotation().getMeasure().plus(turret.getTurretAngle()),
             TurretConstants.robotToTurret);

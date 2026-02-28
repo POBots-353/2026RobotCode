@@ -204,10 +204,10 @@ public class Robot extends TimedRobot {
     FuelSim.getInstance().updateSim();
     FuelSim.getInstance()
         .toggleAirResistance(SmartDashboard.getBoolean("Air Resistance Toggle", false));
-    FuelSim.Hub.RED_HUB.toggleScoreWhenActive(
-        SmartDashboard.getBoolean("Only Score while Active", false));
-    FuelSim.Hub.BLUE_HUB.toggleScoreWhenActive(
-        SmartDashboard.getBoolean("Only Score while Active", false));
+    FuelSim.Hub.RED_HUB.toggleCountWhenActive(
+        SmartDashboard.getBoolean("Only Count while Active", false));
+    FuelSim.Hub.BLUE_HUB.toggleCountWhenActive(
+        SmartDashboard.getBoolean("Only Count while Active", false));
 
     SmartDashboard.putNumber("Red Alliance Score", FuelSim.Hub.RED_HUB.getScore());
     SmartDashboard.putNumber("Blue Alliance Score", FuelSim.Hub.BLUE_HUB.getScore());

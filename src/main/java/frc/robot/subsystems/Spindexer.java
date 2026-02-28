@@ -66,6 +66,22 @@ public class Spindexer extends SubsystemBase {
     kickerMotor.stopMotor();
   }
 
+  public Command idleReverse() {
+    return run(
+        () -> {
+          spindexerMotor.set(SpindexerConstants.spindexerIdleSpeed);
+          kickerMotor.set(SpindexerConstants.kickerIdleSpeed);
+        });
+  }
+
+  public Command reverseBoth() {
+    return run(
+        () -> {
+          spindexerMotor.set(SpindexerConstants.reverseSpindexerSpeed);
+          kickerMotor.set(SpindexerConstants.reverseKickerSpeed);
+        });
+  }
+
   public Command runSpindexer() {
     return run(() -> spindexerMotor.set(SpindexerConstants.spindexerMotorSpeed));
   }

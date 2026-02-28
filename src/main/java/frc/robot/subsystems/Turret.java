@@ -224,7 +224,7 @@ public class Turret extends SubsystemBase {
 
   @Logged(name = "Zeroed Poses Turret")
   public Pose3d[] zeroedComponentPoses() {
-    return new Pose3d[] {new Pose3d(), new Pose3d()};
+    return new Pose3d[] {new Pose3d(), new Pose3d(), new Pose3d(), new Pose3d()};
   }
 
   @Override
