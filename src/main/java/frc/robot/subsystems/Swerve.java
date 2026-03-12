@@ -597,8 +597,7 @@ public class Swerve extends TunerSwerveDrivetrain implements Subsystem {
     stateCache = getState();
     SmartDashboard.putNumber("Swerve/Gyro Position", getPigeonRotation().getDegrees());
 
-    SmartDashboard.putNumber(
-        "Testing/Distance To Hub", (getTurretToHubMeters()));
+    SmartDashboard.putNumber("Testing/Distance To Hub", (getTurretToHubMeters()));
 
     SmartDashboard.putNumber("Testing/Distance To Ferry", getTurretToFerryMeters());
 
@@ -950,6 +949,12 @@ public class Swerve extends TunerSwerveDrivetrain implements Subsystem {
     }
 
     return true;
+  }
+
+  public Command stopSwerve() {
+    return runOnce(
+        () ->
+            this.setControl(fieldOriented.withVelocityX(0).withVelocityY(0).withRotationalRate(0)));
   }
 
   // @Logged(name = "Object Detection Positions")

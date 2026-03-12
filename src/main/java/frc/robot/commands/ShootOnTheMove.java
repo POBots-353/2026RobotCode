@@ -10,6 +10,7 @@ import edu.wpi.first.math.filter.Debouncer;
 import edu.wpi.first.math.filter.LinearFilter;
 import edu.wpi.first.math.geometry.Pose2d;
 import edu.wpi.first.math.kinematics.ChassisSpeeds;
+import edu.wpi.first.units.measure.Angle;
 import edu.wpi.first.wpilibj.RobotBase;
 import edu.wpi.first.wpilibj.Timer;
 import edu.wpi.first.wpilibj2.command.Command;
@@ -37,8 +38,8 @@ public class ShootOnTheMove extends Command {
   private Debouncer turretSetPointDebouncer = new Debouncer(0.02);
   private Debouncer shooterDebouncer = new Debouncer(0.02);
 
-  private double turretTolerance = 6.5; // deg
-  private double hoodTolerance = 1.5; // deg
+  private double turretTolerance = 10.0; // deg
+  private double hoodTolerance = 2.0; // deg
 
   private LinearFilter accelXFilter = LinearFilter.movingAverage(2);
   private LinearFilter accelYFilter = LinearFilter.movingAverage(2);
@@ -108,6 +109,12 @@ public class ShootOnTheMove extends Command {
             fieldSpeeds,
             scoringMode.getAsBoolean());
 
+    Angle compensatedAngle = shootingParameters.turretAngle();
+    
+    if((compensatedAngle.in(Degrees) < -20) && (compensatedAngle.in(Degrees) > -100) && (swerve.getTurretToHubMeters() < 4.2)) {
+      compensatedAngle = compensatedAngle.minus(Degrees.of(6.7));
+    }
+
     turret.moveToAngle(shootingParameters.turretAngle());
     hood.moveToAngle(shootingParameters.hoodAngle());
     shooter.reachGoalVelocity(shootingParameters.shooterSpeed());
@@ -119,9 +126,10 @@ public class ShootOnTheMove extends Command {
         hood.getHoodAngle().in(Degrees) - shootingParameters.hoodAngle().in(Degrees);
 
     if ((turretSetPointDebouncer.calculate(Math.abs(turretErrorDeg) <= turretTolerance)
-        && hoodSetPointDebouncer.calculate(Math.abs(hoodErrorDeg) <= hoodTolerance)
-        && shooterDebouncer.calculate(
-            shooter.shooterAtSetPoint(shootingParameters.shooterSpeed()))) || !scoringMode.getAsBoolean()) {
+            && hoodSetPointDebouncer.calculate(Math.abs(hoodErrorDeg) <= hoodTolerance)
+            && shooterDebouncer.calculate(
+                shooter.shooterAtSetPoint(shootingParameters.shooterSpeed())))
+        || !scoringMode.getAsBoolean()) {
       if (RobotBase.isSimulation()) { // if sim and ready to shoot
         if (isVisualizationFirstShot
             || ((Timer.getFPGATimestamp() - startTime) > 1 / SimConstants.fuelsPerSecond)) {

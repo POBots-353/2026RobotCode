@@ -115,8 +115,9 @@ public class RobotContainer {
   Trigger activeHubTrigger =
       new Trigger(HubTracker::isActive).or(() -> HubTracker.getMatchTime() < 0);
 
-  Trigger almostActiveTrigger =
-      new Trigger(() -> HubTracker.timeUntilActive().orElse(Seconds.of(4)).in(Seconds) < 3);
+  Trigger shiftEndingTrigger =
+      new Trigger(
+          () -> HubTracker.timeRemainingInCurrentShift().orElse(Seconds.of(4)).in(Seconds) < 3.53);
 
   Trigger automatedShootingTrigger =
       new Trigger(() -> SmartDashboard.getBoolean("Automated Shooting Toggle", false));
@@ -147,6 +148,8 @@ public class RobotContainer {
     // NamedCommands.registerCommand("Drive Over Bump To Middle", swerve.driveOverBump(true));
     // NamedCommands.registerCommand("Drive Over Bump To Alliance", swerve.driveOverBump(false));
     // NamedCommands.registerCommand("Move To Fuel", new MoveToFuel(swerve).withTimeout(2));
+    NamedCommands.registerCommand("Stop Swerve", swerve.stopSwerve());
+
     NamedCommands.registerCommand(
         "Shoot On The Move",
         new ShootOnTheMove(
@@ -247,7 +250,10 @@ public class RobotContainer {
     }
 
     SmartDashboard.putData(
-        "Set Arm Zero", intake.runOnce(() -> intake.setArmMaxPosition()).ignoringDisable(true));
+        "Set Arm Down", intake.runOnce(() -> intake.setArmMaxPosition()).ignoringDisable(true));
+    SmartDashboard.putData(
+        "Set Arm Zero", intake.runOnce(() -> intake.setZero()).ignoringDisable(true));
+
     SmartDashboard.putData(
         "Set Hood Zero", hood.runOnce(() -> hood.zeroHood()).ignoringDisable(true));
 
@@ -278,8 +284,8 @@ public class RobotContainer {
 
     preShiftShoot.onTrue(Commands.runOnce(() -> canPreShoot = true));
     activeHubTrigger.onFalse(Commands.runOnce(() -> canPreShoot = false));
-    almostActiveTrigger.onTrue(driverController.rumbleFor(RumbleType.kBothRumble, 1.0, 3));
-    almostActiveTrigger.onTrue(operatorController.rumbleFor(RumbleType.kBothRumble, 1.0, 3));
+    shiftEndingTrigger.onTrue(driverController.rumbleFor(RumbleType.kBothRumble, 1.0, 3));
+    shiftEndingTrigger.onTrue(operatorController.rumbleFor(RumbleType.kBothRumble, 1.0, 3));
   }
 
   private void configureFuelSim() {
@@ -325,6 +331,19 @@ public class RobotContainer {
     Trigger rightAutoClimbButton = driverController.rightBumper();
 
     resetHeadingButton.onTrue(swerve.runOnce(swerve::seedFieldCentric).ignoringDisable(true));
+
+    driverController
+        .rightTrigger()
+        .whileTrue(
+            new ShootOnTheMove(
+                swerve,
+                turret,
+                hood,
+                shooter,
+                spindexer,
+                goalShotTargetSupplier,
+                robotVisualization,
+                inAllianceZoneTrigger));
 
     swerve.setDefaultCommand(
         new GuidedTeleopSwerve(

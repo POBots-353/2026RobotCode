@@ -10,6 +10,7 @@ import edu.wpi.first.math.interpolation.InterpolatingTreeMap;
 import edu.wpi.first.math.kinematics.ChassisSpeeds;
 import edu.wpi.first.units.measure.Angle;
 import edu.wpi.first.units.measure.AngularVelocity;
+import edu.wpi.first.wpilibj.RobotBase;
 import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 import frc.robot.Constants.SOTMConstants;
 import frc.robot.Constants.TurretConstants;
@@ -60,6 +61,12 @@ public class SOTMCalculator {
         isScoring ? SOTMConstants.shooterSpeedMapScoring : SOTMConstants.shooterSpeedMapFerrying;
     InterpolatingDoubleTreeMap timeOfFlightMap =
         isScoring ? SOTMConstants.timeOfFlightMapScoring : SOTMConstants.timeOfFlightMapFerrying;
+
+    if (RobotBase.isSimulation()) {
+      hoodAngleMap = SOTMConstants.hoodAngleMapSim;
+      shooterSpeedMap = SOTMConstants.shooterSpeedMapSim;
+      timeOfFlightMap = SOTMConstants.timeOfFlightMapSim;
+    }
 
     Pose2d robotPose = swerve.getRobotPose();
 

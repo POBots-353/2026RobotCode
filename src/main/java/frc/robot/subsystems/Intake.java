@@ -12,6 +12,7 @@ import com.ctre.phoenix6.hardware.TalonFX;
 import edu.wpi.first.units.measure.Angle;
 import edu.wpi.first.units.measure.AngularVelocity;
 import edu.wpi.first.units.measure.Current;
+import edu.wpi.first.wpilibj.RobotBase;
 import edu.wpi.first.wpilibj.Timer;
 import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 import edu.wpi.first.wpilibj2.command.Command;
@@ -165,7 +166,7 @@ public class Intake extends SubsystemBase {
   }
 
   public boolean isIntakeDeployed() {
-    // return !armMagnetSensor.get();
+    if (RobotBase.isSimulation()) return true;
     return armMainPosition.getValue().gte(IntakeConstants.armDownPositionTolerance);
     // return true; // FOR TESTING IN SIM
   }

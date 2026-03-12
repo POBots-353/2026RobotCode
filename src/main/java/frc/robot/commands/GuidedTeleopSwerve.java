@@ -131,7 +131,7 @@ public class GuidedTeleopSwerve extends Command {
   private double getForwardSpeed() {
     double forwardSpeed =
         forwardRateLimiter.calculate(-forwardSupplier.getAsDouble() * getMaxTranslationalSpeed());
-    if (Math.abs(forwardSupplier.getAsDouble()) <= 0.005) {
+    if (Math.abs(forwardSupplier.getAsDouble()) <= 0.00353) {
       forwardSpeed = 0;
       forwardRateLimiter.reset(0);
     }
@@ -141,7 +141,7 @@ public class GuidedTeleopSwerve extends Command {
   private double getStrafeSpeed() {
     double stafeSpeed =
         strafeRateLimiter.calculate(-strafeSupplier.getAsDouble() * getMaxTranslationalSpeed());
-    if (Math.abs(strafeSupplier.getAsDouble()) <= 0.005) {
+    if (Math.abs(strafeSupplier.getAsDouble()) <= 0.00353) {
       stafeSpeed = 0;
       strafeRateLimiter.reset(0);
     }

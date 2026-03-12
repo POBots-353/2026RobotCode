@@ -85,84 +85,145 @@ public final class Constants {
     public static InterpolatingDoubleTreeMap timeOfFlightMapFerrying =
         new InterpolatingDoubleTreeMap();
 
+    public static InterpolatingTreeMap<Double, Rotation2d> hoodAngleMapSim =
+        new InterpolatingTreeMap<>(InverseInterpolator.forDouble(), Rotation2d::interpolate);
+    public static InterpolatingDoubleTreeMap shooterSpeedMapSim = new InterpolatingDoubleTreeMap();
+    public static InterpolatingDoubleTreeMap timeOfFlightMapSim = new InterpolatingDoubleTreeMap();
+
     static {
-      //   hoodAngleMapScoring.put(1.777, Rotation2d.fromDegrees(21.448));
-      //   hoodAngleMapScoring.put(2.44, Rotation2d.fromDegrees(22.25));
-      //   hoodAngleMapScoring.put(3.28, Rotation2d.fromDegrees(23.62));
-      //   hoodAngleMapScoring.put(3.805, Rotation2d.fromDegrees(25.18));
-      //   hoodAngleMapScoring.put(3.877, Rotation2d.fromDegrees(24.59));
-      //   hoodAngleMapScoring.put(4.34, Rotation2d.fromDegrees(26.64));
-      //   hoodAngleMapScoring.put(5.272, Rotation2d.fromDegrees(26.64));
-      //   hoodAngleMapScoring.put(5.478, Rotation2d.fromDegrees(27.23));
-      //   hoodAngleMapScoring.put(6.285, Rotation2d.fromDegrees(30.65));
-      //   hoodAngleMapScoring.put(2.247, Rotation2d.fromDegrees(21.45));
-      //   hoodAngleMapScoring.put(2.5405, Rotation2d.fromDegrees(22.54));
-      //   hoodAngleMapScoring.put(2.33, Rotation2d.fromDegrees(22.25));
-      //   hoodAngleMapScoring.put(4.842, Rotation2d.fromDegrees(27.52));
-      //   hoodAngleMapScoring.put(3.315, Rotation2d.fromDegrees(24.10));
-      //   hoodAngleMapScoring.put(5.207, Rotation2d.fromDegrees(27.23));
+      hoodAngleMapSim.put(1.681, Rotation2d.fromDegrees(21.448));
+      hoodAngleMapSim.put(2.016, Rotation2d.fromDegrees(21.972));
+      hoodAngleMapSim.put(2.338, Rotation2d.fromDegrees(22.648));
+      hoodAngleMapSim.put(2.665, Rotation2d.fromDegrees(24.122));
+      hoodAngleMapSim.put(3.034, Rotation2d.fromDegrees(25.658));
+      hoodAngleMapSim.put(3.363, Rotation2d.fromDegrees(26.333));
+      hoodAngleMapSim.put(3.711, Rotation2d.fromDegrees(27.562));
+      hoodAngleMapSim.put(4.061, Rotation2d.fromDegrees(29.036));
+      hoodAngleMapSim.put(4.324, Rotation2d.fromDegrees(29.835));
+      hoodAngleMapSim.put(4.619, Rotation2d.fromDegrees(30.449));
+      hoodAngleMapSim.put(5.010, Rotation2d.fromDegrees(32.046));
+      hoodAngleMapSim.put(5.366, Rotation2d.fromDegrees(33.275));
+      hoodAngleMapSim.put(5.610, Rotation2d.fromDegrees(34.319));
+      hoodAngleMapSim.put(6.051, Rotation2d.fromDegrees(35.794));
+      hoodAngleMapSim.put(6.369, Rotation2d.fromDegrees(36.408));
+      hoodAngleMapSim.put(6.704, Rotation2d.fromDegrees(37.002));
+      hoodAngleMapSim.put(7.022, Rotation2d.fromDegrees(36.531));
 
-      //   shooterSpeedMapScoring.put(1.777, 32.51);
-      //   shooterSpeedMapScoring.put(2.44, 35.61);
-      //   shooterSpeedMapScoring.put(3.28, 41.11);
-      //   shooterSpeedMapScoring.put(3.805, 41.11);
-      //   shooterSpeedMapScoring.put(4.34, 47.80);
-      //   shooterSpeedMapScoring.put(5.272, 51.14);
-      //   shooterSpeedMapScoring.put(5.478, 51.14);
-      //   shooterSpeedMapScoring.put(6.285, 53.05);
-      //   shooterSpeedMapScoring.put(2.247, 35.14);
-      //   shooterSpeedMapScoring.put(2.5405, 38.00);
-      //   shooterSpeedMapScoring.put(2.33, 36.09);
-      //   shooterSpeedMapScoring.put(3.877, 47.32);
-      //   shooterSpeedMapScoring.put(4.842, 49.47);
-      //   shooterSpeedMapScoring.put(3.315, 43.74);
-      //   shooterSpeedMapScoring.put(5.312075, 51.14);
+      shooterSpeedMapSim.put(1.681, 18.155);
+      shooterSpeedMapSim.put(2.016, 18.611);
+      shooterSpeedMapSim.put(2.338, 19.516);
+      shooterSpeedMapSim.put(2.665, 20.121);
+      shooterSpeedMapSim.put(3.034, 21.027);
+      shooterSpeedMapSim.put(3.363, 21.629);
+      shooterSpeedMapSim.put(3.711, 22.233);
+      shooterSpeedMapSim.put(4.061, 22.981);
+      shooterSpeedMapSim.put(4.324, 23.583);
+      shooterSpeedMapSim.put(4.619, 24.037);
+      shooterSpeedMapSim.put(5.010, 24.793);
+      shooterSpeedMapSim.put(5.366, 25.549);
+      shooterSpeedMapSim.put(5.610, 25.850);
+      shooterSpeedMapSim.put(6.051, 26.455);
+      shooterSpeedMapSim.put(6.369, 27.057);
+      shooterSpeedMapSim.put(6.704, 27.661);
+      shooterSpeedMapSim.put(7.022, 28.265);
 
-      //   timeOfFlightMapScoring.put(1.777, 1.1);
-      //   timeOfFlightMapScoring.put(2.44, 1.12);
-      //   timeOfFlightMapScoring.put(3.28, 1.3);
-      //   timeOfFlightMapScoring.put(3.805, 1.33);
-      //   timeOfFlightMapScoring.put(4.34, 1.44);
-      //   timeOfFlightMapScoring.put(5.272, 1.60);
-      //   timeOfFlightMapScoring.put(5.478, 1.57);
-      //   timeOfFlightMapScoring.put(6.285, 1.50);
-      //   timeOfFlightMapScoring.put(2.247, 1.20);
-      //   timeOfFlightMapScoring.put(2.5405, 1.20);
-      //   timeOfFlightMapScoring.put(2.33, 1.10);
-      //   timeOfFlightMapScoring.put(3.87, 1.40);
-      //   timeOfFlightMapScoring.put(4.842, 1.50);
-      //   timeOfFlightMapScoring.put(3.315, 1.30);
-      //   timeOfFlightMapScoring.put(5.312, 1.59);
+      timeOfFlightMapSim.put(1.695, 0.893);
+      timeOfFlightMapSim.put(2.016, 0.924);
+      timeOfFlightMapSim.put(2.338, 0.985);
+      timeOfFlightMapSim.put(2.665, 1.013);
+      timeOfFlightMapSim.put(3.034, 1.059);
+      timeOfFlightMapSim.put(3.363, 1.093);
+      timeOfFlightMapSim.put(3.711, 1.118);
+      timeOfFlightMapSim.put(4.061, 1.147);
+      timeOfFlightMapSim.put(4.324, 1.175);
+      timeOfFlightMapSim.put(4.619, 1.195);
+      timeOfFlightMapSim.put(5.010, 1.216);
+      timeOfFlightMapSim.put(5.366, 1.242);
+      timeOfFlightMapSim.put(5.610, 1.241);
+      timeOfFlightMapSim.put(6.051, 1.249);
+      timeOfFlightMapSim.put(6.365, 1.273);
+      timeOfFlightMapSim.put(6.704, 1.295);
+      timeOfFlightMapSim.put(7.022, 1.341);
+    }
+
+    static {
+        hoodAngleMapScoring.put(1.777, Rotation2d.fromDegrees(21.448));
+        hoodAngleMapScoring.put(2.44, Rotation2d.fromDegrees(22.25));
+        hoodAngleMapScoring.put(3.28, Rotation2d.fromDegrees(23.62));
+        hoodAngleMapScoring.put(3.805, Rotation2d.fromDegrees(25.18));
+        hoodAngleMapScoring.put(3.877, Rotation2d.fromDegrees(24.59));
+        hoodAngleMapScoring.put(4.34, Rotation2d.fromDegrees(26.64));
+        hoodAngleMapScoring.put(5.272, Rotation2d.fromDegrees(26.64));
+        hoodAngleMapScoring.put(5.478, Rotation2d.fromDegrees(27.23));
+        hoodAngleMapScoring.put(6.285, Rotation2d.fromDegrees(30.65));
+        hoodAngleMapScoring.put(2.247, Rotation2d.fromDegrees(21.45));
+        hoodAngleMapScoring.put(2.5405, Rotation2d.fromDegrees(22.54));
+        hoodAngleMapScoring.put(2.33, Rotation2d.fromDegrees(22.25));
+        hoodAngleMapScoring.put(4.842, Rotation2d.fromDegrees(27.52));
+        hoodAngleMapScoring.put(3.315, Rotation2d.fromDegrees(24.10));
+        hoodAngleMapScoring.put(5.207, Rotation2d.fromDegrees(27.23));
+
+        shooterSpeedMapScoring.put(1.777, 32.51);
+        shooterSpeedMapScoring.put(2.44, 35.61);
+        shooterSpeedMapScoring.put(3.28, 41.11);
+        shooterSpeedMapScoring.put(3.805, 41.11);
+        shooterSpeedMapScoring.put(4.34, 47.80);
+        shooterSpeedMapScoring.put(5.272, 51.14);
+        shooterSpeedMapScoring.put(5.478, 51.14);
+        shooterSpeedMapScoring.put(6.285, 53.05);
+        shooterSpeedMapScoring.put(2.247, 35.14);
+        shooterSpeedMapScoring.put(2.5405, 38.00);
+        shooterSpeedMapScoring.put(2.33, 36.09);
+        shooterSpeedMapScoring.put(3.877, 47.32);
+        shooterSpeedMapScoring.put(4.842, 49.47);
+        shooterSpeedMapScoring.put(3.315, 43.74);
+        shooterSpeedMapScoring.put(5.312075, 51.14);
+
+        timeOfFlightMapScoring.put(1.777, 1.1);
+        timeOfFlightMapScoring.put(2.44, 1.12);
+        timeOfFlightMapScoring.put(3.28, 1.3);
+        timeOfFlightMapScoring.put(3.805, 1.33);
+        timeOfFlightMapScoring.put(4.34, 1.44);
+        timeOfFlightMapScoring.put(5.272, 1.60);
+        timeOfFlightMapScoring.put(5.478, 1.57);
+        timeOfFlightMapScoring.put(6.285, 1.50);
+        timeOfFlightMapScoring.put(2.247, 1.20);
+        timeOfFlightMapScoring.put(2.5405, 1.20);
+        timeOfFlightMapScoring.put(2.33, 1.10);
+        timeOfFlightMapScoring.put(3.87, 1.40);
+        timeOfFlightMapScoring.put(4.842, 1.50);
+        timeOfFlightMapScoring.put(3.315, 1.30);
+        timeOfFlightMapScoring.put(5.312, 1.59);
 
       hoodAngleMapScoring.put(1.667, Rotation2d.fromDegrees(21.45));
       hoodAngleMapScoring.put(2.14, Rotation2d.fromDegrees(21.45));
       hoodAngleMapScoring.put(2.412, Rotation2d.fromDegrees(21.45));
       hoodAngleMapScoring.put(2.735, Rotation2d.fromDegrees(22.85));
       hoodAngleMapScoring.put(3.046, Rotation2d.fromDegrees(23.35));
-      hoodAngleMapScoring.put(3.467, Rotation2d.fromDegrees(23.35));
-      hoodAngleMapScoring.put(3.725, Rotation2d.fromDegrees(24.24));
-      hoodAngleMapScoring.put(3.963, Rotation2d.fromDegrees(25.13));
-      hoodAngleMapScoring.put(4.187, Rotation2d.fromDegrees(25.43));
-      hoodAngleMapScoring.put(4.5086, Rotation2d.fromDegrees(25.43));
-      hoodAngleMapScoring.put(4.780, Rotation2d.fromDegrees(25.43));
-      hoodAngleMapScoring.put(5.172, Rotation2d.fromDegrees(25.43));
-      hoodAngleMapScoring.put(5.501, Rotation2d.fromDegrees(25.82));
-      hoodAngleMapScoring.put(5.848, Rotation2d.fromDegrees(26.12));
+    //   hoodAngleMapScoring.put(3.467, Rotation2d.fromDegrees(23.35));
+    //   hoodAngleMapScoring.put(3.725, Rotation2d.fromDegrees(24.24));
+    //   hoodAngleMapScoring.put(3.963, Rotation2d.fromDegrees(25.13));
+    //   hoodAngleMapScoring.put(4.187, Rotation2d.fromDegrees(25.43));
+    //   hoodAngleMapScoring.put(4.5086, Rotation2d.fromDegrees(25.43));
+    //   hoodAngleMapScoring.put(4.780, Rotation2d.fromDegrees(25.43));
+    //   hoodAngleMapScoring.put(5.172, Rotation2d.fromDegrees(25.43));
+    //   hoodAngleMapScoring.put(5.501, Rotation2d.fromDegrees(25.82));
+    //   hoodAngleMapScoring.put(5.848, Rotation2d.fromDegrees(26.12));
 
       shooterSpeedMapScoring.put(1.667, 34.18);
       shooterSpeedMapScoring.put(2.14, 36.14);
       shooterSpeedMapScoring.put(2.412, 40.53);
       shooterSpeedMapScoring.put(2.735, 41.02);
       shooterSpeedMapScoring.put(3.046, 41.99);
-      shooterSpeedMapScoring.put(3.467, 43.21);
-      shooterSpeedMapScoring.put(3.725, 43.95);
-      shooterSpeedMapScoring.put(3.963, 44.92);
-      shooterSpeedMapScoring.put(4.187, 45.51);
-      shooterSpeedMapScoring.put(4.5086, 45.65);
-      shooterSpeedMapScoring.put(4.780, 45.65);
-      shooterSpeedMapScoring.put(5.172, 46.87);
-      shooterSpeedMapScoring.put(5.501, 47.36);
-      shooterSpeedMapScoring.put(5.848, 48.83);
+    //   shooterSpeedMapScoring.put(3.467, 43.21);
+    //   shooterSpeedMapScoring.put(3.725, 43.95);
+    //   shooterSpeedMapScoring.put(3.963, 44.92);
+    //   shooterSpeedMapScoring.put(4.187, 45.51);
+    //   shooterSpeedMapScoring.put(4.5086, 45.65);
+    //   shooterSpeedMapScoring.put(4.780, 45.65);
+    //   shooterSpeedMapScoring.put(5.172, 46.87);
+    //   shooterSpeedMapScoring.put(5.501, 47.36);
+    //   shooterSpeedMapScoring.put(5.848, 48.83);
 
       timeOfFlightMapScoring.put(1.667, 0.95);
       timeOfFlightMapScoring.put(2.14, 1.05);
@@ -172,12 +233,12 @@ public final class Constants {
       timeOfFlightMapScoring.put(3.467, 1.40);
       timeOfFlightMapScoring.put(3.725, 1.39);
       timeOfFlightMapScoring.put(3.963, 1.41);
-      timeOfFlightMapScoring.put(4.187, 1.50);
-      timeOfFlightMapScoring.put(4.5086, 1.35);
-      timeOfFlightMapScoring.put(4.780, 1.39);
-      timeOfFlightMapScoring.put(5.172, 1.40);
-      timeOfFlightMapScoring.put(5.501, 1.37);
-      timeOfFlightMapScoring.put(5.848, 1.48);
+    //   timeOfFlightMapScoring.put(4.187, 1.50);
+    //   timeOfFlightMapScoring.put(4.5086, 1.35);
+    //   timeOfFlightMapScoring.put(4.780, 1.39);
+    //   timeOfFlightMapScoring.put(5.172, 1.40);
+    //   timeOfFlightMapScoring.put(5.501, 1.37);
+    //   timeOfFlightMapScoring.put(5.848, 1.48);
 
       // ferrying maps
       hoodAngleMapFerrying.put(6.572, Rotation2d.fromDegrees(29.28));
@@ -472,7 +533,7 @@ public final class Constants {
         Path.of(
             Filesystem.getDeployDirectory().getPath(),
             "apriltags",
-            regalEagleAprilTagJson + ".json");
+            aprilTagJson + ".json");
 
     public static AprilTagFieldLayout aprilTagLayout;
 
@@ -605,8 +666,8 @@ public final class Constants {
     public static final Angle MIN_ANGLE = Degrees.of(-270.0);
     public static final Angle MAX_ANGLE = Degrees.of(90.0);
 
-    public static final Angle encAMagnetOffset = Rotations.of(-0.538330078125);
-    public static final Angle encBMagnetOffset = Rotations.of(-0.82421875);
+    public static final Angle encAMagnetOffset = Rotations.of(-0.517333984375);
+    public static final Angle encBMagnetOffset = Rotations.of(-0.802734375);
 
     public static final AngularVelocity maxTurretVelocity = DegreesPerSecond.of(2.75 * 360); // 3
     public static final AngularAcceleration maxTurretAcceleration =
