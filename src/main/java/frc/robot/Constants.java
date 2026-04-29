@@ -60,7 +60,7 @@ import java.util.List;
  * constants are needed, to reduce verbosity.
  */
 public final class Constants {
-//   public static final boolean tuningMode = false;
+  //   public static final boolean tuningMode = false;
 
   public static class OperatorConstants {
     public static final int kDriverControllerPort = 0;
@@ -134,17 +134,19 @@ public final class Constants {
       simDataPoints.add(
           new ShootingDataPoint(7.022, 28.265, Rotation2d.fromDegrees(36.531), 1.341));
 
-ferryDataPoints.add(new ShootingDataPoint(6.572, 68.25, Rotation2d.fromDegrees(31.78), 1.49));
-ferryDataPoints.add(new ShootingDataPoint(7.229, 64.92, Rotation2d.fromDegrees(41.74), 1.43));
-ferryDataPoints.add(new ShootingDataPoint(7.79, 67.93, Rotation2d.fromDegrees(45.16), 1.26));
-ferryDataPoints.add(new ShootingDataPoint(8.344, 70.27, Rotation2d.fromDegrees(47.02), 1.31));
-ferryDataPoints.add(new ShootingDataPoint(9.014, 70.94, Rotation2d.fromDegrees(47.99), 1.40));
-ferryDataPoints.add(new ShootingDataPoint(9.594, 73.95, Rotation2d.fromDegrees(48.77), 1.37));
-ferryDataPoints.add(new ShootingDataPoint(10.13, 78.96, Rotation2d.fromDegrees(48.77), 1.35));
-ferryDataPoints.add(new ShootingDataPoint(10.61, 81.63, Rotation2d.fromDegrees(49.47), 1.41));
-ferryDataPoints.add(new ShootingDataPoint(11.04, 86.98, Rotation2d.fromDegrees(51.51), 1.28));
-ferryDataPoints.add(new ShootingDataPoint(14.24, 100.37, Rotation2d.fromDegrees(54.93), 1.49));
-ferryDataPoints.add(new ShootingDataPoint(15.66, 120.43, Rotation2d.fromDegrees(52.88), 1.54));
+      ferryDataPoints.add(new ShootingDataPoint(6.572, 68.25, Rotation2d.fromDegrees(31.78), 1.49));
+      ferryDataPoints.add(new ShootingDataPoint(7.229, 64.92, Rotation2d.fromDegrees(41.74), 1.43));
+      ferryDataPoints.add(new ShootingDataPoint(7.79, 67.93, Rotation2d.fromDegrees(45.16), 1.26));
+      ferryDataPoints.add(new ShootingDataPoint(8.344, 70.27, Rotation2d.fromDegrees(47.02), 1.31));
+      ferryDataPoints.add(new ShootingDataPoint(9.014, 70.94, Rotation2d.fromDegrees(47.99), 1.40));
+      ferryDataPoints.add(new ShootingDataPoint(9.594, 73.95, Rotation2d.fromDegrees(48.77), 1.37));
+      ferryDataPoints.add(new ShootingDataPoint(10.13, 78.96, Rotation2d.fromDegrees(48.77), 1.35));
+      ferryDataPoints.add(new ShootingDataPoint(10.61, 81.63, Rotation2d.fromDegrees(49.47), 1.41));
+      ferryDataPoints.add(new ShootingDataPoint(11.04, 86.98, Rotation2d.fromDegrees(51.51), 1.28));
+      ferryDataPoints.add(
+          new ShootingDataPoint(14.24, 100.37, Rotation2d.fromDegrees(54.93), 1.49));
+      ferryDataPoints.add(
+          new ShootingDataPoint(15.66, 120.43, Rotation2d.fromDegrees(52.88), 1.54));
 
       scoringDataPoints.add(
           new ShootingDataPoint(1.81, 52.65, Rotation2d.fromDegrees(21.45), 0.99));
@@ -152,8 +154,7 @@ ferryDataPoints.add(new ShootingDataPoint(15.66, 120.43, Rotation2d.fromDegrees(
           new ShootingDataPoint(2.04, 55.56, Rotation2d.fromDegrees(21.45), 1.01));
       scoringDataPoints.add(
           new ShootingDataPoint(2.59, 60.85, Rotation2d.fromDegrees(22.85), 1.15));
-      scoringDataPoints.add(
-          new ShootingDataPoint(2.81, 62.17, Rotation2d.fromDegrees(24.54), 1.2));
+      scoringDataPoints.add(new ShootingDataPoint(2.81, 62.17, Rotation2d.fromDegrees(24.54), 1.2));
       scoringDataPoints.add(
           new ShootingDataPoint(3.18, 63.49, Rotation2d.fromDegrees(26.91), 1.20));
       scoringDataPoints.add(
@@ -457,13 +458,10 @@ ferryDataPoints.add(new ShootingDataPoint(15.66, 120.43, Rotation2d.fromDegrees(
     public static final String LIRAprilTagJson = "2026-LIR";
 
     public static final Path aprilTagJsonPath =
-        Path.of(
-            Filesystem.getDeployDirectory().getPath(),
-            "apriltags",
-            fingerLakesAprilTagJson + ".json");
+        Path.of(Filesystem.getDeployDirectory().getPath(), "apriltags", aprilTagJson + ".json");
 
     public static AprilTagFieldLayout aprilTagLayout;
-
+    
     static {
       try {
         aprilTagLayout = new AprilTagFieldLayout(aprilTagJsonPath);

@@ -3,8 +3,9 @@
 // the WPILib BSD license file in the root directory of this project.
 
 package frc.robot.subsystems;
-//robot=be good
-//ethan is the worst programmer
+
+// robot=be good
+// ethan is the worst programmer
 // ^statement = false
 import static edu.wpi.first.units.Units.Degrees;
 
@@ -95,10 +96,10 @@ public class Intake extends SubsystemBase {
   public void moveDown() {
     armMotor.setControl(motionMagicRequest.withPosition(IntakeConstants.downPosition));
   }
-    public void moveMid() {
+
+  public void moveMid() {
     armMotor.setControl(motionMagicRequest.withPosition(IntakeConstants.shakePosition));
   }
-
 
   public void moveDownManual() {
     armMotor.set(0.25);

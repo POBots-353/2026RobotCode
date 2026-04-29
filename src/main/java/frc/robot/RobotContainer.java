@@ -47,7 +47,6 @@ import frc.robot.util.FuelSim;
 import frc.robot.util.HubTracker;
 import frc.robot.util.RobotVisualization;
 import frc.robot.util.SwerveTelemetry;
-
 import java.util.Set;
 import java.util.function.Supplier;
 
@@ -58,6 +57,8 @@ public class RobotContainer {
       new ExtendedCommandXboxController(OperatorConstants.kOperatorControllerPort);
 
   private SendableChooser<Command> autoChooser;
+
+  private int logNumber = 0;
 
   private int ferryPoseIndex = 0;
   private final Supplier<Pose2d> ferryPoseSupplier =
@@ -351,11 +352,17 @@ public class RobotContainer {
     Trigger rightAutoClimbButton = driverController.rightBumper();
     Trigger logButton = driverController.a();
 
-    //     logButton.onTrue(Commands.runOnce(
-    //     ()-> {
-    //         SmartDashboard.putString("DataPoints",);
-    //     }
-    // ));
+    logButton.onTrue(
+        Commands.runOnce(
+            () -> {
+              logNumber++;
+              double speed = SmartDashboard.getNumber("Dynamic Shooter Speed", 0);
+              double angle =
+                  SmartDashboard.getNumber(
+                      "Dynamic Hood Angle", HoodConstants.minAngle.in(Degrees));
+
+              SmartDashboard.putString("DataPoints/" + logNumber, speed + " , " + angle);
+            }));
 
     resetHeadingButton.onTrue(swerve.runOnce(swerve::seedFieldCentric).ignoringDisable(true));
 
@@ -466,22 +473,18 @@ public class RobotContainer {
     //   hood.setDefaultCommand(hood.moveToAngleCommand(HoodConstants.minAngle));
     //   shooter.setDefaultCommand(shooter.stopShooterCommand());
     // }
-//idk
+    // idk
     hood.setDefaultCommand(
-  Commands.either(
-    Commands.none(),
-    hood.moveToAngleCommand(HoodConstants.minAngle),
-    () -> SmartDashboard.getBoolean("Data Point Mode", false)
-  )
-);
+        Commands.either(
+            Commands.none(),
+            hood.moveToAngleCommand(HoodConstants.minAngle),
+            () -> SmartDashboard.getBoolean("Data Point Mode", false)));
 
     shooter.setDefaultCommand(
-  Commands.either(
-    Commands.none(),
-    shooter.stopShooterCommand(),
-    () -> SmartDashboard.getBoolean("Data Point Mode", false)
-  )
-);
+        Commands.either(
+            Commands.none(),
+            shooter.stopShooterCommand(),
+            () -> SmartDashboard.getBoolean("Data Point Mode", false)));
 
     turret.setDefaultCommand(turret.faceTarget(goalShotTargetSupplier, swerve::getRobotPose));
 
@@ -489,8 +492,6 @@ public class RobotContainer {
 
     // intake.setDefaultCommand(intake.intakeSequence(false));
     // hood.setDefaultCommand(hood.aimForTarget(AllianceUtil::getHubPose, swerve::getRobotPose));
-
-
 
     shootButton.whileTrue(
         new ShootOnTheMove(
@@ -537,13 +538,13 @@ public class RobotContainer {
     //     .whileTrue((Constants.tuningMode) ? spindexer.manualBoth() : spindexer.manualReverse())
     //     .onFalse(spindexer.runOnce(() -> spindexer.stopBoth()));
     // idk
-manualSpindexerButton.whileTrue(
-    Commands.defer(
-  () -> SmartDashboard.getBoolean("Data Point Mode", false)
-        ? spindexer.manualBoth()
-        : spindexer.manualReverse(),
-  Set.of(spindexer)
-));
+    manualSpindexerButton.whileTrue(
+        Commands.defer(
+            () ->
+                SmartDashboard.getBoolean("Data Point Mode", false)
+                    ? spindexer.manualBoth()
+                    : spindexer.manualReverse(),
+            Set.of(spindexer)));
 
     reverseIntakeButton.whileTrue(intake.reverseIntakeRollers()).onFalse(intake.stopIntake());
 

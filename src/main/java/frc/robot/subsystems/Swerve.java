@@ -907,7 +907,7 @@ public class Swerve extends TunerSwerveDrivetrain implements Subsystem {
   }
 
   private boolean isValidSingleTagPose(Pose3d visionPose, double distance) {
-    if (distance > 4.5) {
+    if (distance > 5.0) {
       return false;
     }
 
@@ -920,7 +920,7 @@ public class Swerve extends TunerSwerveDrivetrain implements Subsystem {
 
   private boolean isValidMultitagPose(
       Pose3d visionPose, double averageDistance, int detectedTargets, double timestampSeconds) {
-    if (averageDistance > 4.5) {
+    if (averageDistance > 5.0) {
       return false;
     }
 
