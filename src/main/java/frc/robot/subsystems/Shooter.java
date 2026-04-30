@@ -28,11 +28,9 @@ public class Shooter extends SubsystemBase {
   private final MotionMagicVelocityVoltage velocityMMRequest = new MotionMagicVelocityVoltage(0);
   private final VelocityVoltage velocityRequest = new VelocityVoltage(0);
 
-  public static final Slot0Configs slot340Configs =
-      new Slot0Configs().withKS(0.01).withKV(0.125).withKP(0.27).withKI(0.0);
 
   public Shooter() {
-    shooterMotor.getConfigurator().apply(ShooterConstants.shooterConfigs.withSlot0(slot340Configs));
+    shooterMotor.getConfigurator().apply(ShooterConstants.shooterConfigs);
   }
 
   public Command newConfigs() {

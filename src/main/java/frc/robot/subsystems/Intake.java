@@ -31,7 +31,7 @@ public class Intake extends SubsystemBase {
 
   private boolean wasDeployedLastLoop;
 
-  private final double shakePeriod = 1.0;
+  private final double shakePeriod = 0.5;
 
   private final MotionMagicVoltage motionMagicRequest =
       new MotionMagicVoltage(0).withEnableFOC(true);

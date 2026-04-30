@@ -10,6 +10,7 @@ import static edu.wpi.first.units.Units.Meters;
 import static edu.wpi.first.units.Units.RotationsPerSecond;
 import static edu.wpi.first.units.Units.Seconds;
 
+import com.ctre.phoenix6.swerve.SwerveRequest;
 import com.pathplanner.lib.auto.AutoBuilder;
 import com.pathplanner.lib.auto.NamedCommands;
 import edu.wpi.first.epilogue.Logged;
@@ -131,6 +132,9 @@ public class RobotContainer {
 
   Trigger tooCloseToHubTrigger = new Trigger(() -> swerve.tooCloseToHub());
 
+  Trigger tuningModeTrigger =
+      new Trigger(() -> SmartDashboard.getBoolean("Data Point Mode", false));
+
   Trigger preShiftShoot =
       new Trigger(
               () -> {
@@ -165,7 +169,7 @@ public class RobotContainer {
                 hood,
                 shooter,
                 spindexer,
-                AllianceUtil::getHubPose,
+                goalShotTargetSupplier, // goalShotTargetSupplier
                 robotVisualization,
                 () -> true)
             .asProxy());
@@ -278,6 +282,8 @@ public class RobotContainer {
     SmartDashboard.putNumber("Dynamic Shooter KP", 0);
     SmartDashboard.putNumber("Dynamic Shooter KV", 0);
 
+    SmartDashboard.putBoolean("Data Point Mode", false);
+
     goalShotTarget = AllianceUtil.getHubPose();
 
     kickerLaserTrigger.onTrue(Commands.runOnce(() -> spindexer.addBall()));
@@ -341,16 +347,16 @@ public class RobotContainer {
     SmartDashboard.putBoolean("Air Resistance Toggle", false);
     SmartDashboard.putBoolean("Only Count while Active", false);
     SmartDashboard.putBoolean("Automated Shooting Toggle", false);
-    SmartDashboard.getBoolean("Data Point Mode", false);
   }
 
   private void configureDriverBindings() {
     Trigger slowMode = driverController.leftTrigger();
     Trigger driveOverrideButton = driverController.rightTrigger();
     Trigger resetHeadingButton = driverController.start().and(driverController.back());
-    Trigger leftAutoClimbButton = driverController.leftBumper();
-    Trigger rightAutoClimbButton = driverController.rightBumper();
-    Trigger logButton = driverController.a();
+    // Trigger leftAutoClimbButton = driverController.leftBumper();
+    // Trigger rightAutoClimbButton = driverController.rightBumper();
+    Trigger logButton = driverController.rightBumper();
+    Trigger brakeButton = driverController.leftBumper();
 
     logButton.onTrue(
         Commands.runOnce(
@@ -360,11 +366,15 @@ public class RobotContainer {
               double angle =
                   SmartDashboard.getNumber(
                       "Dynamic Hood Angle", HoodConstants.minAngle.in(Degrees));
+              double distance = swerve.getTurretToTargetMeters(goalShotTargetSupplier);
 
-              SmartDashboard.putString("DataPoints/" + logNumber, speed + " , " + angle);
+              SmartDashboard.putString(
+                  "DataPoints/" + logNumber, speed + " , " + angle + " , " + distance);
             }));
 
     resetHeadingButton.onTrue(swerve.runOnce(swerve::seedFieldCentric).ignoringDisable(true));
+
+    brakeButton.whileTrue(swerve.applyRequest(() -> new SwerveRequest.SwerveDriveBrake()));
 
     swerve.setDefaultCommand(
         new GuidedTeleopSwerve(
@@ -474,17 +484,36 @@ public class RobotContainer {
     //   shooter.setDefaultCommand(shooter.stopShooterCommand());
     // }
     // idk
+    // hood.setDefaultCommand(
+    //     Commands.either(
+    //         Commands.none(),
+    //         hood.moveToAngleCommand(HoodConstants.minAngle),
+    //         () -> SmartDashboard.getBoolean("Data Point Mode", false)));
+
+    tuningModeTrigger.onTrue(shooter.runOnce(() -> {}).alongWith(hood.stop()));
+    tuningModeTrigger.onFalse(shooter.runOnce(() -> {}).alongWith(hood.stop()));
+
     hood.setDefaultCommand(
-        Commands.either(
-            Commands.none(),
-            hood.moveToAngleCommand(HoodConstants.minAngle),
-            () -> SmartDashboard.getBoolean("Data Point Mode", false)));
+        Commands.defer(
+            () ->
+                SmartDashboard.getBoolean("Data Point Mode", false)
+                    ? Commands.none()
+                    : hood.moveToAngleCommand(HoodConstants.minAngle),
+            Set.of(hood)));
+
+    // shooter.setDefaultCommand(
+    //     Commands.either(
+    //         Commands.none(),
+    //         shooter.stopShooterCommand(),
+    //         () -> SmartDashboard.getBoolean("Data Point Mode", false)));
 
     shooter.setDefaultCommand(
-        Commands.either(
-            Commands.none(),
-            shooter.stopShooterCommand(),
-            () -> SmartDashboard.getBoolean("Data Point Mode", false)));
+        Commands.defer(
+            () ->
+                SmartDashboard.getBoolean("Data Point Mode", false)
+                    ? Commands.none()
+                    : shooter.stopShooterCommand(),
+            Set.of(shooter)));
 
     turret.setDefaultCommand(turret.faceTarget(goalShotTargetSupplier, swerve::getRobotPose));
 
@@ -503,6 +532,9 @@ public class RobotContainer {
             goalShotTargetSupplier,
             robotVisualization,
             inAllianceZoneTrigger));
+
+            //if (time=5:15) then , ethan = awake 
+            // if 10pm<time<5:15 am, ethan= not sleep talk
 
     // shootButton.whileTrue(
     //     Commands.parallel(

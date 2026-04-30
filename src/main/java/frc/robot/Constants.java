@@ -134,19 +134,11 @@ public final class Constants {
       simDataPoints.add(
           new ShootingDataPoint(7.022, 28.265, Rotation2d.fromDegrees(36.531), 1.341));
 
-      ferryDataPoints.add(new ShootingDataPoint(6.572, 68.25, Rotation2d.fromDegrees(31.78), 1.49));
-      ferryDataPoints.add(new ShootingDataPoint(7.229, 64.92, Rotation2d.fromDegrees(41.74), 1.43));
-      ferryDataPoints.add(new ShootingDataPoint(7.79, 67.93, Rotation2d.fromDegrees(45.16), 1.26));
-      ferryDataPoints.add(new ShootingDataPoint(8.344, 70.27, Rotation2d.fromDegrees(47.02), 1.31));
-      ferryDataPoints.add(new ShootingDataPoint(9.014, 70.94, Rotation2d.fromDegrees(47.99), 1.40));
-      ferryDataPoints.add(new ShootingDataPoint(9.594, 73.95, Rotation2d.fromDegrees(48.77), 1.37));
-      ferryDataPoints.add(new ShootingDataPoint(10.13, 78.96, Rotation2d.fromDegrees(48.77), 1.35));
-      ferryDataPoints.add(new ShootingDataPoint(10.61, 81.63, Rotation2d.fromDegrees(49.47), 1.41));
-      ferryDataPoints.add(new ShootingDataPoint(11.04, 86.98, Rotation2d.fromDegrees(51.51), 1.28));
-      ferryDataPoints.add(
-          new ShootingDataPoint(14.24, 100.37, Rotation2d.fromDegrees(54.93), 1.49));
-      ferryDataPoints.add(
-          new ShootingDataPoint(15.66, 120.43, Rotation2d.fromDegrees(52.88), 1.54));
+      ferryDataPoints.add(new ShootingDataPoint(3.7, 60.00, Rotation2d.fromDegrees(45.00), 1.5));
+      ferryDataPoints.add(new ShootingDataPoint(6.2, 70.00, Rotation2d.fromDegrees(45.00), 1.6));
+      ferryDataPoints.add(new ShootingDataPoint(8.6, 80.00, Rotation2d.fromDegrees(45.00), 1.7));
+      ferryDataPoints.add(new ShootingDataPoint(11.4, 90.00, Rotation2d.fromDegrees(45.00), 1.8));
+      ferryDataPoints.add(new ShootingDataPoint(14.0, 100.00, Rotation2d.fromDegrees(45.00), 1.9));
 
       scoringDataPoints.add(
           new ShootingDataPoint(1.81, 52.65, Rotation2d.fromDegrees(21.45), 0.99));
@@ -163,6 +155,8 @@ public final class Constants {
           new ShootingDataPoint(4.17, 68.52, Rotation2d.fromDegrees(28.99), 1.30));
       scoringDataPoints.add(
           new ShootingDataPoint(4.61, 70.10, Rotation2d.fromDegrees(28.99), 1.33));
+      scoringDataPoints.add(
+          new ShootingDataPoint(5.011, 77.10, Rotation2d.fromDegrees(27.507), 1.50));
 
       for (ShootingDataPoint p : simDataPoints) {
         hoodAngleMapSim.put(p.distance(), p.hoodAngle());
@@ -275,10 +269,10 @@ public final class Constants {
     // 111.182298 - 15.025 = 96;
     public static final Angle minPosition = Degrees.of(0.0);
     public static final Angle shakePosition = Degrees.of(55);
-    public static final Angle maxPosition = Degrees.of(130.0); // 97.57298
+    public static final Angle maxPosition = Degrees.of(126.5); // 97.57298
 
     public static final Angle downPosition = maxPosition;
-    public static final Angle upPosition = minPosition;
+    public static final Angle upPosition = minPosition.plus(Degrees.of(3.0));
 
     public static final Angle armDownPositionTolerance = maxPosition.plus(minPosition).div(2);
 
@@ -301,7 +295,7 @@ public final class Constants {
             .withKV(0.021)
             .withKA(0.0105)
             .withKG(0.0353)
-            .withKP(50.0)
+            .withKP(64.0)
             .withKI(0.00)
             .withKD(0.1353)
             .withGravityType(GravityTypeValue.Arm_Cosine)
@@ -461,7 +455,7 @@ public final class Constants {
         Path.of(Filesystem.getDeployDirectory().getPath(), "apriltags", aprilTagJson + ".json");
 
     public static AprilTagFieldLayout aprilTagLayout;
-    
+
     static {
       try {
         aprilTagLayout = new AprilTagFieldLayout(aprilTagJsonPath);
@@ -591,8 +585,8 @@ public final class Constants {
     public static final Angle MIN_ANGLE = Degrees.of(-270.0);
     public static final Angle MAX_ANGLE = Degrees.of(90.0);
 
-    public static final Angle encAMagnetOffset = Rotations.of(-0.525390625);
-    public static final Angle encBMagnetOffset = Rotations.of(-0.814453125);
+    public static final Angle encAMagnetOffset = Rotations.of(-0.12451171875);
+    public static final Angle encBMagnetOffset = Rotations.of(-0.31396484375);
 
     public static final AngularVelocity maxTurretVelocity = DegreesPerSecond.of(2.75 * 360); // 3
     public static final AngularAcceleration maxTurretAcceleration =
@@ -782,7 +776,7 @@ public final class Constants {
             .withMotionMagicAcceleration(motionMagicAcceleration.in(RotationsPerSecondPerSecond))
             .withMotionMagicJerk(motionMagicJerk);
 
-    public static final Slot0Configs slot0Configs =
+    public static final Slot0Configs oldslot0Configs =
         new Slot0Configs()
             .withKS(0.164) // 0.164
             .withKV(0.124) // 0.124
@@ -791,6 +785,10 @@ public final class Constants {
             .withKI(0.0) // 0.0
             .withKD(0.01) // 0.01
             .withStaticFeedforwardSign(StaticFeedforwardSignValue.UseVelocitySign);
+
+  public static final Slot0Configs slot0Configs =
+      new Slot0Configs().withKS(0.01).withKV(0.125).withKP(0.27).withKI(0.0);
+
 
     // public static final Slot0Configs slot340Configs =
     //     new Slot0Configs().withKS(0.0).withKV(0.30).withKP(0.030).withKI(0.0);
@@ -811,7 +809,7 @@ public final class Constants {
     public static final TalonFXConfiguration shooterConfigs =
         new TalonFXConfiguration()
             .withCurrentLimits(currentLimitConfigs)
-            // .withSlot0(slot340Configs)
+            .withSlot0(slot0Configs)
             .withMotionMagic(motionMagicConfigs)
             .withFeedback(feedbackConfigs)
             .withMotorOutput(motorOutputConfigs);
